@@ -3,6 +3,9 @@ import './globals.css';
 export const metadata = {
   title: '풍덩 - 창작 연재 플랫폼',
   description: '풍덩 웹앱 Next.js 변환',
+  icons: {
+    icon: '/풍덩_로고__ai__명함용__확정___-removebg-preview.png',
+  },
 };
 
 export default function RootLayout({ children }) {
