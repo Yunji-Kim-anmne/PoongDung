@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>풍덩 - 창작 연재 플랫폼</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="pageTransitionOverlay"></div>
+
+    <!-- 헤더 -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="logo">풍덩</h1>
+            <!-- 독자용 네비게이션 -->
+            <nav id="readerNav" class="view-top-nav">
+                <a href="#" class="view-nav-item" data-page="homePage">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12h18M3 6h18M3 18h18"></path>
+                    </svg>
+                    <span class="nav-label">홈</span>
+                </a>
+                <a href="#" class="view-nav-item" data-page="explorePage">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <span class="nav-label">탐색</span>
+                </a>
+                <a href="#" class="view-nav-item" data-page="bookshelfPage">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                    <span class="nav-label">책꽂이</span>
+                </a>
+                <a href="#" class="view-nav-item" data-page="myPage">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span class="nav-label">마이페이지</span>
+                </a>
+            </nav>
+            <!-- 작가용 네비게이션 -->
+            <nav id="authorNav" class="view-top-nav" style="display: none;">
+                <a href="#" class="view-nav-item" data-page="authorHomePage">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12h18M3 6h18M3 18h18"></path>
+                    </svg>
+                    <span class="nav-label">홈</span>
+                </a>
+                <a href="#" class="view-nav-item" data-page="authorWritePage">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    <span class="nav-label">창작</span>
+                </a>
+                <a href="#" class="view-nav-item" data-page="authorMyPage">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span class="nav-label">마이페이지</span>
+                </a>
+            </nav>
+            <button id="modeToggleBtn" class="mode-toggle-btn" title="작가 모드로 전환">
+                ✏️
+            </button>
+        </div>
+    </header>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="main-content">
+        <!-- 홈 페이지 -->
+        <div id="homePage" class="page-content">
+            <!-- 히어로 배너 -->
+            <section class="hero-section">
+                <div class="hero-left">
+                    <div class="hero-logo-placeholder">
+                        <img src="풍덩_로고__ai__명함용__확정___-removebg-preview.png" alt="풍덩 로고" class="hero-logo">
+                    </div>
+                </div>
+                <div class="hero-right">
+                    <h2 class="hero-title">당신의 취향에 풍덩 빠져보세요.</h2>
+                    <p class="hero-sub">지금 이 순간, 당신을 기다리는 작품 <span id="totalWorksCount"></span>편이 있습니다.</p>
+                    <p class="hero-desc">당신이 찾던 작품, 풍덩에서라면 만날지도 몰라요.</p>
+                    <button class="hero-btn" id="goExploreBtn">작품 탐색하기</button>
+                </div>
+            </section>
+
+            <!-- 지금 뜨는 독자 반응 -->
+            <section class="trending-section">
+                <h2 class="section-title">지금 뜨는 반응 🔥</h2>
+                <div class="trending-tags" id="trendingTags"></div>
+            </section>
+
+            <!-- 이 주의 작품 -->
+            <section class="weekly-section">
+                <h2 class="section-title">이 주의 작품</h2>
+                <div class="works-grid" id="weeklyWorksGrid"></div>
+            </section>
+
+            <!-- 나를 위한 추천 -->
+            <section class="recommend-section">
+                <h2 class="section-title">나를 위한 추천</h2>
+                <div id="recommendContent"></div>
+            </section>
+        </div>
+
+        <!-- 책꽂이 페이지 -->
+        <div id="bookshelfPage" class="page-content" style="display: none;">
+            <section class="works-section">
+                <h2 class="section-title">내 책꽂이</h2>
+                <div class="works-grid" id="bookshelfGrid">
+                    <!-- 찜한 작품들이 JavaScript로 추가됨 -->
+                </div>
+                <div id="emptyBookshelf" class="empty-message" style="display: none;">
+                    <p>아직 찜한 작품이 없습니다.</p>
+                    <p>마음에 드는 작품을 찾아 찜해보세요!</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- 탐색 페이지 -->
+        <div id="explorePage" class="page-content" style="display: none;">
+            <!-- 장르 필터 섹션 -->
+            <section class="filter-section">
+                <h2 class="filter-title">장르로 탐색하기</h2>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-genre="all">전체</button>
+                    <button class="filter-btn" data-genre="literature">문학</button>
+                    <button class="filter-btn" data-genre="webtoon">만화/웹툰</button>
+                    <button class="filter-btn" data-genre="information">정보성 글</button>
+                </div>
+            </section>
+
+            <!-- 카테고리 필터 섹션 -->
+            <section class="category-section" id="categorySection" style="display: none;">
+                <h3 class="category-title">카테고리 선택</h3>
+                <div class="category-buttons" id="categoryButtons">
+                    <!-- 카테고리 버튼들이 JavaScript로 추가됨 -->
+                </div>
+            </section>
+
+            <section class="hashtag-section" id="hashtagSection" style="display: none;">
+                <div class="hashtag-header">
+                    <h3 class="hashtag-title">태그로 좁히기</h3>
+                    <div class="hashtag-controls">
+                        <div class="toggle-wrap">
+                            <span class="toggle-label" id="toggleLabel">1개 선택</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="multiSelectToggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label">다중 선택</span>
+                        </div>
+                        <button id="resetHashtagsBtn" class="reset-tags-btn">전체 해제</button>
+                    </div>
+                </div>
+                <div class="hashtag-group" id="authorHashtagButtons"></div>
+                <div class="hashtag-group" id="readerHashtagButtons"></div>
+            </section>
+
+            <!-- 작품 카드 목록 섹션 -->
+            <section class="works-section">
+                <div class="works-header">
+                    <h2 class="section-title">인기 작품</h2>
+                    <div class="completion-filter">
+                        <button class="completion-btn active" data-status="all">전체</button>
+                        <button class="completion-btn" data-status="ongoing">연재 중</button>
+                        <button class="completion-btn" data-status="completed">완결</button>
+                    </div>
+                    <div class="view-settings">
+                        <button class="view-btn active" data-view="grid" title="박스 형태">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                        </button>
+                        <button class="view-btn" data-view="list" title="라인 형태">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="8" y1="6" x2="21" y2="6"></line>
+                                <line x1="8" y1="12" x2="21" y2="12"></line>
+                                <line x1="8" y1="18" x2="21" y2="18"></line>
+                                <rect x="3" y="5" width="2" height="2"></rect>
+                                <rect x="3" y="11" width="2" height="2"></rect>
+                                <rect x="3" y="17" width="2" height="2"></rect>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="works-grid" id="worksGrid" data-view="grid">
+                    <!-- 작품 카드들이 JavaScript로 추가됨 -->
+                </div>
+            </section>
+        </div>
+
+        <!-- 마이페이지 -->
+        <div id="myPage" class="page-content" style="display: none;">
+            <!-- 프로필 섹션 -->
+            <section class="mypage-profile-section">
+                <div class="mypage-avatar" id="mypageAvatar">독</div>
+                <div class="mypage-profile-info">
+                    <p class="mypage-nickname" id="mypageNickname">풍덩 독자</p>
+                    <span class="mypage-mode-badge" id="mypageModeBadge">독자 모드</span>
+                </div>
+            </section>
+
+            <!-- 독서 현황 -->
+            <section class="mypage-stats-section">
+                <div class="mypage-stat-card">
+                    <p class="mypage-stat-label">찜한 작품</p>
+                    <p class="mypage-stat-value" id="statLikedCount">0편</p>
+                </div>
+                <div class="mypage-stat-card">
+                    <p class="mypage-stat-label">읽은 회차</p>
+                    <p class="mypage-stat-value" id="statEpisodeCount">0화</p>
+                </div>
+                <div class="mypage-stat-card">
+                    <p class="mypage-stat-label">현재 모드</p>
+                    <p class="mypage-stat-value" id="statMode">독자</p>
+                </div>
+            </section>
+
+            <!-- 최근 읽은 작품 -->
+            <section class="mypage-recent-section">
+                <h2 class="section-title">최근 읽은 작품</h2>
+                <div id="mypageRecentWork"></div>
+            </section>
+
+            <!-- 취향 분석 -->
+            <section class="mypage-chart-section">
+                <h2 class="section-title">내 취향 분석</h2>
+                <div class="mypage-charts">
+                    <div class="mypage-chart-card">
+                        <p class="mypage-chart-title">장르 분포</p>
+                        <canvas id="genreChart"></canvas>
+                    </div>
+                    <div class="mypage-chart-card">
+                        <p class="mypage-chart-title">선호 태그 TOP 5</p>
+                        <canvas id="tagChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 작가 홈 페이지 -->
+        <div id="authorHomePage" class="page-content author-mode" style="display: none;">
+            <!-- 히어로 배너 -->
+            <section class="hero-section">
+                <div class="hero-left">
+                    <div class="hero-logo-placeholder">
+                        <img src="풍덩로고 작가모드 removebg-preview.png" alt="풍덩 로고" class="hero-logo">
+                    </div>
+                </div>
+                <div class="hero-right">
+                    <h2 class="hero-title">당신의 바다에 독자들을 초대하세요.</h2>
+                    <p class="hero-sub">지금 이 순간, 당신의 작품을 기다리는 독자 <span id="totalReadersCount">0</span>명이 있습니다.</p>
+                    <p class="hero-desc">당신의 이야기, 풍덩에서라면 누군가의 마음에 닿을지도 몰라요.</p>
+                    <button class="hero-btn" id="goAuthorWriteBtn">작품 올리러 가기</button>
+                </div>
+            </section>
+
+            <!-- 나의 지난 작품 -->
+            <section class="past-works-section">
+                <h2 class="section-title">나의 지난 작품</h2>
+                <div class="works-grid" id="pastWorksGrid"></div>
+                <div id="emptyPastWorks" class="empty-message" style="display: none;">
+                    <p>아직 등록한 작품이 없습니다.</p>
+                    <p>첫 작품을 올려보세요!</p>
+                </div>
+            </section>
+
+            <!-- 인기 독자 반응 -->
+            <section class="reader-reactions-section">
+                <h2 class="section-title">인기 독자 반응 🔥</h2>
+                <div class="trending-tags" id="authorTrendingTags"></div>
+            </section>
+        </div>
+
+        <!-- 창작 페이지 -->
+        <div id="authorWritePage" class="page-content author-mode" style="display: none;">
+            <section class="creation-container">
+                <div class="creation-header">
+                    <h2 class="section-title">나의 작품</h2>
+                    <button id="addWorkBtn" class="add-work-btn">+</button>
+                </div>
+                <div class="my-works-grid" id="myWorksGrid"></div>
+                <div id="emptyCreation" class="empty-message" style="display: none;">
+                    <p>당신의 첫 연재작을 시작하세요</p>
+                    <button id="emptyAddWorkBtn" class="empty-add-btn">+</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- 작가 마이페이지 -->
+        <div id="authorMyPage" class="page-content author-mode" style="display: none;">
+            <!-- 프로필 섹션 -->
+            <section class="author-profile-section">
+                <div class="author-avatar">작</div>
+                <div class="author-profile-info">
+                    <p class="author-nickname">풍덩 작가</p>
+                    <span class="author-mode-badge">작가 모드</span>
+                </div>
+            </section>
+
+            <!-- 통계 섹션 -->
+            <section class="author-stats-section">
+                <div class="author-stat-card">
+                    <p class="author-stat-label">등록 작품 수</p>
+                    <p class="author-stat-value" id="statWorkCount">0개</p>
+                </div>
+                <div class="author-stat-card">
+                    <p class="author-stat-label">총 독자 반응</p>
+                    <p class="author-stat-value" id="statTotalReaction">0건</p>
+                </div>
+                <div class="author-stat-card">
+                    <p class="author-stat-label">평균 좋아요 비율</p>
+                    <p class="author-stat-value" id="statLikeRatio">0%</p>
+                </div>
+            </section>
+
+            <!-- 차트 섹션 -->
+            <section class="author-chart-section">
+                <h2 class="section-title">독자 분석</h2>
+                <div class="author-charts">
+                    <div class="author-chart-card">
+                        <p class="author-chart-title">독자 연령대 분포</p>
+                        <canvas id="ageChart"></canvas>
+                    </div>
+                    <div class="author-chart-card">
+                        <p class="author-chart-title">방문 빈도/좋아요 비율</p>
+                        <canvas id="engagementChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 감상 페이지 -->
+        <div id="viewPage" class="page-content" style="display: none;">
+            <section class="view-page-shell">
+                <div class="view-page-topbar">
+                    <span class="view-page-label">감상하기</span>
+                </div>
+
+                <section class="view-book-header">
+                    <div class="view-book-cover-wrap">
+                        <img id="viewCover" src="" alt="작품 표지">
+                    </div>
+                    <div class="view-book-meta">
+                        <p class="view-book-author" id="viewAuthor"></p>
+                        <h2 class="view-book-title" id="viewTitle"></h2>
+                        <p class="view-book-synopsis" id="viewSynopsis"></p>
+                    </div>
+                </section>
+
+                <section class="view-book-layout">
+                    <aside class="view-episode-panel">
+                        <h3 class="view-panel-title">회차 목록</h3>
+                        <div id="viewEpisodeList" class="view-episode-list"></div>
+                    </aside>
+
+                    <article class="view-reading-panel">
+                        <div class="view-reading-header">
+                            <span class="view-reading-badge" id="viewEpisodeBadge"></span>
+                            <h3 class="view-reading-title" id="viewEpisodeTitle"></h3>
+                        </div>
+                        <div class="view-reading-content" id="viewEpisodeContent"></div>
+                    </article>
+                </section>
+
+                <button class="episode-arrow-btn left" id="prevEpBtn" title="이전화 보기">&#8249;</button>
+                <button class="episode-arrow-btn right" id="nextEpBtn" title="다음화 보기">&#8250;</button>
+            </section>
+        </div>
+
+        <div id="workModal" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeModal()">
+            <div class="modal-container">
+                <button class="modal-close-btn" onclick="closeModal()">✕</button>
+                <div class="modal-inner">
+                    <div class="modal-cover-wrap">
+                        <img id="modalCover" src="" alt="작품 표지">
+                    </div>
+                    <div class="modal-body">
+                        <div class="modal-title-row">
+                            <h2 id="modalTitle" class="modal-title"></h2>
+                            <button id="modalReadBtn" class="modal-read-btn">감상하러 가기</button>
+                        </div>
+                        <p id="modalAuthor" class="modal-author"></p>
+                        <div class="modal-rating">
+                            <span class="star">⭐</span>
+                            <span id="modalRating"></span>
+                        </div>
+                        <p id="modalSynopsis" class="modal-synopsis"></p>
+                        <div class="modal-tags-section">
+                            <p class="modal-tag-label author-label">작가 태그</p>
+                            <div id="modalAuthorTags" class="modal-tags-wrap"></div>
+                            <p class="modal-tag-label reader-label">독자 태그</p>
+                            <div id="modalReaderTags" class="modal-tags-wrap"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 하단 네비게이션 바 -->
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12h18M3 6h18M3 18h18"></path>
+            </svg>
+            <span class="nav-label">홈</span>
+        </a>
+        <a href="#" class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <span class="nav-label">탐색</span>
+        </a>
+        <a href="#" class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            <span class="nav-label">책꽂이</span>
+        </a>
+        <a href="#" class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span class="nav-label">마이페이지</span>
+        </a>
+    </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
