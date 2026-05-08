@@ -1,15 +1,16 @@
 ﻿'use client';
 
 import { useEffect } from 'react';
+import { supabase } from './lib/supabase';
 
 const pageMarkup = `
     <div id="pageTransitionOverlay"></div>
 
     <!-- 헤더 -->
+    <div class="header-shadow-cover"></div>
     <header class="header">
-        <div class="header-content">
+        <div class="header-content" style="overflow: visible;">
             <h1 class="logo">풍덩</h1>
-            <!-- 독자용 네비게이션 -->
             <nav id="readerNav" class="view-top-nav">
                 <a href="#" class="view-nav-item" data-page="homePage">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -24,22 +25,7 @@ const pageMarkup = `
                     </svg>
                     <span class="nav-label">탐색</span>
                 </a>
-                <a href="#" class="view-nav-item" data-page="bookshelfPage">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                    </svg>
-                    <span class="nav-label">책꽂이</span>
-                </a>
-                <a href="#" class="view-nav-item" data-page="myPage">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    <span class="nav-label">마이페이지</span>
-                </a>
             </nav>
-            <!-- 작가용 네비게이션 -->
             <nav id="authorNav" class="view-top-nav" style="display: none;">
                 <a href="#" class="view-nav-item" data-page="authorHomePage">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -49,22 +35,16 @@ const pageMarkup = `
                 </a>
                 <a href="#" class="view-nav-item" data-page="authorWritePage">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
                     </svg>
                     <span class="nav-label">창작</span>
                 </a>
-                <a href="#" class="view-nav-item" data-page="authorMyPage">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    <span class="nav-label">마이페이지</span>
-                </a>
             </nav>
-            <button id="modeToggleBtn" class="mode-toggle-btn" title="작가 모드로 전환">
-                ✏️
-            </button>
+            <div class="header-auth-buttons">
+                <button onclick="window.location.href='/login'" style="border: 2px solid #5BB8F5; color: #5BB8F5; background: white; border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer;">로그인</button>
+                <button onclick="window.location.href='/signup'" style="background: #5BB8F5; color: white; border: none; border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer;">회원가입</button>
+            </div>
         </div>
     </header>
 
@@ -246,7 +226,7 @@ const pageMarkup = `
         </div>
 
         <!-- 작가 홈 페이지 -->
-        <div id="authorHomePage" class="page-content author-mode" style="display: none;">
+        <div id="authorHomePage" class="page-content author-mode" style="display: none; min-height: 100vh;">
             <!-- 히어로 배너 -->
             <section class="hero-section">
                 <div class="hero-left">
@@ -266,7 +246,7 @@ const pageMarkup = `
             <section class="past-works-section">
                 <h2 class="section-title">나의 지난 작품</h2>
                 <div class="works-grid" id="pastWorksGrid"></div>
-                <div id="emptyPastWorks" class="empty-message" style="display: none;">
+                <div id="emptyPastWorks" class="empty-message" style="display: none; text-align: center; padding: 40px;">
                     <p>아직 등록한 작품이 없습니다.</p>
                     <p>첫 작품을 올려보세요!</p>
                 </div>
@@ -274,22 +254,101 @@ const pageMarkup = `
 
             <!-- 인기 독자 반응 -->
             <section class="reader-reactions-section">
-                <h2 class="section-title">인기 독자 반응 🔥</h2>
+                <h2 class="section-title">주요 독자 반응</h2>
                 <div class="trending-tags" id="authorTrendingTags"></div>
             </section>
         </div>
 
         <!-- 창작 페이지 -->
         <div id="authorWritePage" class="page-content author-mode" style="display: none;">
-            <section class="creation-container">
-                <div class="creation-header">
+            <section class="creation-container" style="position:relative;">
+                <!-- 가이드 배너 -->
+                <div id="creationGuideBanner" style="display:none;position:absolute;top:2rem;right:1rem;z-index:10;">
+                    <button onclick="
+                        const panel = document.getElementById('creationGuidePanel');
+                        const isOpen = panel.style.display === 'block';
+                        panel.style.display = isOpen ? 'none' : 'block';
+                    " style="background:white;border:1.5px solid #FFE0C0;border-radius:8px;padding:6px 12px;font-size:0.8rem;font-weight:600;color:#FF8C2A;cursor:pointer;white-space:nowrap;">
+                        📋 창작 절차 안내
+                    </button>
+                    <div id="creationGuidePanel" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:600px;background:white;border:1.5px solid #FFE0C0;border-radius:16px;padding:1.5rem;box-shadow:0 8px 24px rgba(255,140,42,0.15);z-index:20;">
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+                            <div style="background:#FFF8F0;border:2px solid #FFE0C0;border-radius:16px;padding:1.5rem;text-align:center;position:relative;">
+                                <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#FF8C2A;color:white;width:24px;height:24px;border-radius:50%;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;">1</div>
+                                <div style="font-size:2rem;margin-bottom:0.5rem;">📝</div>
+                                <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:0.5rem;">작품 등록</h3>
+                                <p style="font-size:0.8rem;color:#7F8C8D;line-height:1.5;">제목, 장르, 줄거리, 태그를 입력해서 작품 프로필을 만들어요.</p>
+                            </div>
+                            <div style="background:#F9F9F9;border:2px solid #EEE;border-radius:16px;padding:1.5rem;text-align:center;position:relative;opacity:0.6;">
+                                <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#CCC;color:white;width:24px;height:24px;border-radius:50%;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;">2</div>
+                                <div style="font-size:2rem;margin-bottom:0.5rem;">✍️</div>
+                                <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:0.5rem;">에피소드 작성</h3>
+                                <p style="font-size:0.8rem;color:#7F8C8D;line-height:1.5;">회차별로 내용을 작성하고 독자들에게 공개할 수 있어요.</p>
+                            </div>
+                            <div style="background:#F9F9F9;border:2px solid #EEE;border-radius:16px;padding:1.5rem;text-align:center;position:relative;opacity:0.6;">
+                                <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#CCC;color:white;width:24px;height:24px;border-radius:50%;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;">3</div>
+                                <div style="font-size:2rem;margin-bottom:0.5rem;">🌊</div>
+                                <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:0.5rem;">독자 만나기</h3>
+                                <p style="font-size:0.8rem;color:#7F8C8D;line-height:1.5;">풍덩의 독자들이 당신의 이야기를 발견하고 반응을 남겨요.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="creation-header" style="display: flex; flex-direction: column; align-items: flex-start; gap: 16px;">
                     <h2 class="section-title">나의 작품</h2>
-                    <button id="addWorkBtn" class="add-work-btn">+</button>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <button id="addWorkBtn" class="add-work-btn">+</button>
+                        <div id="addWorkGuidePopup" style="
+                            display: none;
+                            position: absolute;
+                            left: calc(100% + 16px);
+                            top: 50%;
+                            transform: translateY(-50%);
+                            background: white;
+                            border: 1.5px solid #FFE0C0;
+                            border-radius: 12px;
+                            padding: 14px 16px;
+                            width: 300px;
+                            box-shadow: 0 8px 24px rgba(255, 140, 42, 0.15);
+                            font-size: 13px;
+                            color: #2C3E50;
+                            line-height: 1.6;
+                            z-index: 50;
+                            white-space: normal;
+                        ">
+                            <button onclick="document.getElementById('addWorkGuidePopup').style.display='none'" style="position:absolute;top:8px;right:10px;border:none;background:none;font-size:14px;color:#999;cursor:pointer;">✕</button>
+                            <strong style="color:#FF8C2A;">작품 등록 안내</strong><br/>
+                            + 버튼을 눌러 새 작품을 등록하세요.<br/>
+                            장르, 제목, 줄거리, 태그를 입력하면 완료!
+                            <div style="position:absolute;top:50%;left:-8px;transform:translateY(-50%);width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:8px solid white;"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="my-works-grid" id="myWorksGrid"></div>
-                <div id="emptyCreation" class="empty-message" style="display: none;">
-                    <p>당신의 첫 연재작을 시작하세요</p>
-                    <button id="emptyAddWorkBtn" class="empty-add-btn">+</button>
+                <div id="emptyCreation" class="creation-guide" style="display: none;">
+                    <p class="creation-guide-title">첫 작품을 세상에 내보낼 준비가 됐나요?</p>
+                    <div class="creation-guide-steps">
+                        <div class="creation-guide-card">
+                            <div class="creation-guide-step-num">1</div>
+                            <div class="creation-guide-icon">📝</div>
+                            <h3 class="creation-guide-card-title">작품 등록</h3>
+                            <p class="creation-guide-card-desc">제목, 장르, 줄거리, 태그를 입력해서 작품 프로필을 만들어요.</p>
+                            <button id="emptyAddWorkBtn" class="creation-guide-btn">지금 시작하기 →</button>
+                        </div>
+                        <div class="creation-guide-card creation-guide-card--dim">
+                            <div class="creation-guide-step-num">2</div>
+                            <div class="creation-guide-icon">✍️</div>
+                            <h3 class="creation-guide-card-title">에피소드 작성</h3>
+                            <p class="creation-guide-card-desc">회차별로 내용을 작성하고 독자들에게 공개할 수 있어요.</p>
+                        </div>
+                        <div class="creation-guide-card creation-guide-card--dim">
+                            <div class="creation-guide-step-num">3</div>
+                            <div class="creation-guide-icon">🌊</div>
+                            <h3 class="creation-guide-card-title">독자 만나기</h3>
+                            <p class="creation-guide-card-desc">풍덩의 독자들이 당신의 이야기를 발견하고 반응을 남겨요.</p>
+                        </div>
+                    </div>
                 </div>
             </section>
         </div>
@@ -385,7 +444,13 @@ const pageMarkup = `
                     <div class="modal-body">
                         <div class="modal-title-row">
                             <h2 id="modalTitle" class="modal-title"></h2>
-                            <button id="modalReadBtn" class="modal-read-btn">감상하러 가기</button>
+                            <div style="position: relative; display: inline-block;">
+                                <button id="modalReadBtn" class="modal-read-btn">감상하러 가기</button>
+                                <div id="modalReadTooltip" class="modal-read-tooltip" style="display: none;">
+                                    <div class="tooltip-content">아직 로그인을 하지 않았어요. <a href="/login" style="color: #5BB8F5; text-decoration: none; font-weight: 600;">로그인</a> 하러갈까요?</div>
+                                    <div class="tooltip-arrow"></div>
+                                </div>
+                            </div>
                         </div>
                         <p id="modalAuthor" class="modal-author"></p>
                         <div class="modal-rating">
@@ -398,6 +463,82 @@ const pageMarkup = `
                             <div id="modalAuthorTags" class="modal-tags-wrap"></div>
                             <p class="modal-tag-label reader-label">독자 태그</p>
                             <div id="modalReaderTags" class="modal-tags-wrap"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 작품 등록 모달 -->
+        <div id="addWorkModal" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeAddWorkModal()">
+            <div class="modal-container">
+                <button class="modal-close-btn" onclick="closeAddWorkModal()">✕</button>
+                <div class="modal-inner" style="max-width: 600px; width: 100%;">
+                    <!-- 1단계: 가이드라인 동의 -->
+                    <div id="addWorkStep1" class="add-work-step">
+                        <h2 class="modal-title" style="color: #5BB8F5; text-align: center; margin-bottom: 20px;">작품 등록 전 꼭 읽어주세요</h2>
+                        <div style="background: #EEF4FB; padding: 20px; border-radius: 8px; margin-bottom: 20px; line-height: 1.8; font-size: 14px; color: #2C3E50;">
+                            <p><strong>❌ 타인의 저작물 무단 사용 금지</strong><br/>타인이 창작한 글, 이미지, 음악 등을 허가 없이 사용할 수 없습니다.</p>
+                            <p><strong>🤖 AI 생성 콘텐츠 사용 시 반드시 표시</strong><br/>AI로 생성된 텍스트나 이미지를 사용했다면 반드시 표기해주세요.</p>
+                            <p><strong>⚠️ 선정적·폭력적·혐오 콘텐츠 등록 불가</strong><br/>명백한 선정적, 폭력적, 혐오성 콘텐츠는 등록이 불가합니다.</p>
+                            <p><strong>⚡ 위반 시 작품 삭제 및 계정 제재</strong><br/>가이드라인 위반 시 사전 안내 없이 작품이 삭제되거나 계정에 제재가 가해질 수 있습니다.</p>
+                        </div>
+                        <div class="add-work-footer">
+                            <button class="agree-btn" id="agreeBtn">동의하고 계속하기</button>
+                        </div>
+                    </div>
+
+                    <!-- 2단계: 작품 정보 입력 -->
+                    <div id="addWorkStep2" class="add-work-step" style="display: none;">
+                        <h2 class="modal-title" style="color: #5BB8F5; text-align: center; margin-bottom: 20px;">작품 정보 입력</h2>
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #2C3E50;">장르 선택 *</label>
+                                <select id="workGenre" style="width: 100%; padding: 10px 12px; border: 1px solid #D5E8F7; border-radius: 6px; font-size: 14px; color: #2C3E50;">
+                                    <option value="">선택해주세요</option>
+                                    <option value="literature">문학</option>
+                                    <option value="webtoon">만화·웹툰</option>
+                                    <option value="information">정보성 글</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #2C3E50;">제목 *</label>
+                                <input type="text" id="workTitle" placeholder="작품의 제목을 입력해주세요" style="width: 100%; padding: 10px 12px; border: 1px solid #D5E8F7; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #2C3E50;">표지 이미지 업로드</label>
+                                <input type="file" id="workCover" accept="image/jpeg,image/png,image/webp" style="width: 100%; padding: 10px 12px; border: 1px solid #D5E8F7; border-radius: 6px; font-size: 14px;">
+                                <p style="font-size: 12px; color: #999; margin-top: 6px;">권장 비율 3:4 (600×800px) · JPG, PNG, WebP · 최대 5MB</p>
+                                <div id="coverPreview" style="margin-top: 10px; width: 100px; height: 140px; border: 1px dashed #D5E8F7; border-radius: 6px; display: none; overflow: hidden;">
+                                    <img id="coverPreviewImg" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #2C3E50;">줄거리 *</label>
+                                <textarea id="workSynopsis" placeholder="작품의 줄거리를 입력해주세요 (최대 100자)" maxlength="100" style="width: 100%; padding: 10px 12px; border: 1px solid #D5E8F7; border-radius: 6px; font-size: 14px; min-height: 100px; box-sizing: border-box; resize: vertical;" oninput="document.getElementById('synopsisCount').textContent = this.value.length"></textarea>
+                                <div style="text-align: right; font-size: 12px; color: #999; margin-top: 4px;"><span id="synopsisCount">0</span> / 100</div>
+                            </div>
+                            <div class="ai-check-row">
+                                <input type="checkbox" id="workIsAI" style="width:16px;height:16px;accent-color:#FF8C2A;margin:0;flex-shrink:0;">
+                                <label for="workIsAI" style="font-size:0.85rem;color:#555;">AI 생성 콘텐츠를 사용했습니다</label>
+                            </div>
+                        </div>
+                        <div class="add-work-footer">
+                            <button class="prev-btn" onclick="goBackToStep1()">이전</button>
+                            <button class="next-btn" id="nextBtn">다음</button>
+                        </div>
+                    </div>
+
+                    <!-- 3단계: 태그 지정 -->
+                    <div id="addWorkStep3" class="add-work-step" style="display: none;">
+                        <h2 class="modal-title" style="color: #5BB8F5; text-align: center; margin-bottom: 20px;">태그 지정</h2>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #2C3E50;">작가 해시태그 선택</label>
+                            <div id="addWorkAuthorTags" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                        </div>
+                        <div class="add-work-footer">
+                            <button class="prev-btn" onclick="goBackToStep2()">이전</button>
+                            <button class="submit-btn" id="submitWorkBtn">작품 등록</button>
                         </div>
                     </div>
                 </div>
@@ -427,13 +568,6 @@ const pageMarkup = `
             </svg>
             <span class="nav-label">책꽂이</span>
         </a>
-        <a href="#" class="nav-item">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-            <span class="nav-label">마이페이지</span>
-        </a>
     </nav>
 
     
@@ -444,6 +578,7 @@ const pageMarkup = `
 export default function Page() {
   useEffect(() => {
     let disposed = false;
+        let authSubscription = null;
 
     (async () => {
       if (typeof window === 'undefined') return;
@@ -875,20 +1010,40 @@ let readEpisodeCount = 0;
 let lastReadWorkId = null;
 let genreChartInstance = null;
 let tagChartInstance = null;
+let currentUserProfile = null;
 const jsSortable = window.Sortable;
 
-// 찜한 작품 로드 (localStorage에서)
-function loadLikedWorks() {
+// 찜한 작품 로드 (localStorage 또는 Supabase에서)
+async function loadLikedWorks() {
     if (typeof window === 'undefined') return;
-    const saved = localStorage.getItem('likedWorks');
-    if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-            likedWorksOrder = Array.from(new Set(parsed.map(id => parseInt(id, 10)).filter(id => !Number.isNaN(id))));
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        // 비로그인: localStorage 사용
+        const saved = localStorage.getItem('likedWorks');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+                likedWorksOrder = Array.from(new Set(parsed.map(id => parseInt(id, 10)).filter(id => !Number.isNaN(id))));
+            }
         }
+
+        likedWorks = new Set(likedWorksOrder);
+        return;
     }
 
-    likedWorks = new Set(likedWorksOrder);
+    // 로그인: Supabase에서 불러오기 (sort_order 순 정렬)
+    const { data, error } = await supabase
+        .from('user_likes')
+        .select('work_id, sort_order')
+        .eq('user_id', user.id)
+        .order('sort_order', { ascending: true });
+
+    if (!error && data) {
+        likedWorksOrder = data.map(row => row.work_id);
+        likedWorks = new Set(likedWorksOrder);
+    }
 }
 
 // 찜한 작품 저장 (localStorage에)
@@ -1060,7 +1215,7 @@ function createWorkCard(work, isBookshelf = false) {
                 <p class="work-card-author">by ${work.author}</p>
                 <div class="work-card-meta">
                     <div class="work-card-tags">
-                        ${work.tags.map(tag => `<span class="work-card-tag">${tag}</span>`).join('')}
+                        ${(work.tags || []).map(tag => `<span class="work-card-tag">${tag}</span>`).join('')}
                     </div>
                 </div>
                 <div class="work-card-rating">
@@ -1111,9 +1266,19 @@ function openModal(workId) {
 
     const modalReadBtn = document.getElementById('modalReadBtn');
     if (modalReadBtn) {
-        modalReadBtn.onclick = () => {
-            closeModal();
-            setTimeout(() => openViewPage(workId), 260);
+        modalReadBtn.onclick = async (e) => {
+            e.stopPropagation();
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            const tooltip = document.getElementById('modalReadTooltip');
+            if (!user) {
+                if (tooltip) {
+                    tooltip.style.display = tooltip.style.display === 'none' ? 'block' : 'none';
+                }
+            } else {
+                closeModal();
+                setTimeout(() => openViewPage(workId), 260);
+            }
         };
     }
 
@@ -1337,6 +1502,14 @@ function renderHashtags(category) {
     };
 }
 
+const trendingData = [
+    { username: "달빛독자", avatar: "달", workTitle: "달빛 도서관", comment: "마지막 회차 읽고 진짜 한참 멍했어요. 이런 결말이라니...", tags: ["#눈물주의", "#여운남음"] },
+    { username: "판타지덕후", avatar: "판", workTitle: "마법학교의 비밀", comment: "세계관이 너무 탄탄해서 읽는 내내 실제처럼 느껴졌어요!", tags: ["#세계관탄탄", "#몰입각"] },
+    { username: "새벽세시", avatar: "새", workTitle: "도시의 두 얼굴", comment: "자려고 누웠다가 결국 밤새 다 읽어버렸습니다... 범인이에요", tags: ["#밤새읽음", "#강추"] },
+    { username: "로판수집가", avatar: "로", workTitle: "달빛 도서관", comment: "두근두근해서 심장이 터질 뻔 했어요 진짜로요", tags: ["#심장주의", "#설렘주의"] },
+    { username: "힐링중", avatar: "힐", workTitle: "그리운 계절", comment: "요즘 너무 지쳐있었는데 이 작품 덕분에 위로받았어요 🥹", tags: ["#힐링", "#공감100%"] }
+];
+
 function renderHome() {
     const totalWorksCount = document.getElementById('totalWorksCount');
     const trendingTags = document.getElementById('trendingTags');
@@ -1350,16 +1523,8 @@ function renderHome() {
 
     totalWorksCount.textContent = String(works.length);
 
-    const trendingComments = [
-        { username: "달빛독자", avatar: "달", workTitle: "달빛 도서관", comment: "마지막 회차 읽고 진짜 한참 멍했어요. 이런 결말이라니...", tags: ["#눈물주의", "#여운남음"] },
-        { username: "판타지덕후", avatar: "판", workTitle: "마법학교의 비밀", comment: "세계관이 너무 탄탄해서 읽는 내내 실제처럼 느껴졌어요!", tags: ["#세계관탄탄", "#몰입각"] },
-        { username: "새벽세시", avatar: "새", workTitle: "도시의 두 얼굴", comment: "자려고 누웠다가 결국 밤새 다 읽어버렸습니다... 범인이에요", tags: ["#밤새읽음", "#강추"] },
-        { username: "로판수집가", avatar: "로", workTitle: "달빛 도서관", comment: "두근두근해서 심장이 터질 뻔 했어요 진짜로요", tags: ["#심장주의", "#설렘주의"] },
-        { username: "힐링중", avatar: "힐", workTitle: "그리운 계절", comment: "요즘 너무 지쳐있었는데 이 작품 덕분에 위로받았어요 🥹", tags: ["#힐링", "#공감100%"] }
-    ];
-
     const trendingContainer = document.getElementById('trendingTags');
-    trendingContainer.innerHTML = trendingComments.map(item => `
+    trendingContainer.innerHTML = trendingData.map(item => `
         <div class="trending-comment-card" data-work-title="${item.workTitle}">
             <div class="trending-comment-header">
                 <div class="trending-avatar">${item.avatar}</div>
@@ -1488,10 +1653,163 @@ function renderHome() {
     }
 }
 
-function renderAuthorHome() {
+async function renderAuthorHome() {
+    const pastWorksGrid = document.getElementById('pastWorksGrid');
+    const emptyPastWorks = document.getElementById('emptyPastWorks');
+    const authorTrendingTags = document.getElementById('authorTrendingTags');
     const totalReadersCount = document.getElementById('totalReadersCount');
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const authorWorks = user
+        ? await supabase.from('works').select('*').eq('author_id', user.id)
+        : { data: [] };
+    const authorWorksList = authorWorks?.data || [];
+    const authorWorkTitles = new Set(authorWorksList.map(work => work.title));
+
+    if (pastWorksGrid && emptyPastWorks) {
+        if (authorWorksList.length === 0) {
+            pastWorksGrid.innerHTML = '';
+            emptyPastWorks.style.display = 'block';
+        } else {
+            emptyPastWorks.style.display = 'none';
+            pastWorksGrid.innerHTML = authorWorksList.map(work => `
+                <div class="author-work-card">
+                    <div class="author-work-cover">
+                        ${work.cover_url
+                            ? `<img src="${work.cover_url}" alt="${work.title}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`
+                            : `<div style="width:100%;height:100%;background:linear-gradient(135deg,#FFE0C0,#FFB347);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:2rem;">📖</div>`
+                        }
+                    </div>
+                    <div class="author-work-info">
+                        <h3 class="author-work-title">${work.title}</h3>
+                        <p class="author-work-synopsis">${work.synopsis || ''}</p>
+                        <div class="author-work-meta">
+                            <span class="author-work-genre">${work.genre || ''}</span>
+                            <span class="author-work-status ${work.is_published ? 'published' : 'draft'}">${work.is_published ? '공개 중' : '비공개'}</span>
+                        </div>
+                    </div>
+                    <div class="author-work-actions">
+                        <button class="author-work-btn author-work-btn--edit" data-work-id="${work.id}">✏️ 수정</button>
+                        <button class="author-work-btn author-work-btn--home" data-work-id="${work.id}">🏠 작품 홈</button>
+                    </div>
+                </div>
+            `).join('');
+
+            // 버튼 이벤트 연결
+            pastWorksGrid.querySelectorAll('.author-work-btn--edit').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    alert('수정 기능은 준비 중이에요!');
+                });
+            });
+            pastWorksGrid.querySelectorAll('.author-work-btn--home').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const workId = btn.dataset.workId;
+                    openModal(workId);
+                });
+            });
+        }
+    }
+
+    if (authorTrendingTags) {
+        const filteredTrendingData = authorWorksList.length > 0
+            ? trendingData.filter(item => authorWorkTitles.has(item.workTitle))
+            : [];
+
+        if (filteredTrendingData.length === 0) {
+            authorTrendingTags.innerHTML = '<div class="empty-message" style="background: transparent; padding: 16px;">아직 독자 반응이 없어요.</div>';
+        } else {
+            authorTrendingTags.innerHTML = filteredTrendingData.map(item => `
+                <div class="trending-comment-card" data-work-title="${item.workTitle}">
+                    <div class="trending-comment-header">
+                        <div class="trending-avatar">${item.avatar}</div>
+                        <div class="trending-comment-meta">
+                            <span class="trending-username">${item.username}</span>
+                            <span class="trending-work-title">📖 ${item.workTitle}</span>
+                        </div>
+                    </div>
+                    <p class="trending-comment-text">${item.comment}</p>
+                    <div class="trending-comment-tags">
+                        ${item.tags.map(tag => `<span class="trending-comment-tag">${tag}</span>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            authorTrendingTags.querySelectorAll('.trending-comment-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const workTitle = card.dataset.workTitle;
+                    const work = works.find(w => w.title === workTitle);
+                    if (work) openModal(work.id);
+                });
+            });
+        }
+    }
+
     if (totalReadersCount) {
-        totalReadersCount.textContent = String(works.length * 37);
+        totalReadersCount.textContent = String(works.length * 10);
+    }
+
+    const goAuthorWriteBtn = document.getElementById('goAuthorWriteBtn');
+    if (goAuthorWriteBtn) {
+        goAuthorWriteBtn.onclick = () => {
+            const colors = [
+                'rgba(255, 140, 42, 0.3)',
+                'rgba(255, 140, 42, 0.5)',
+                'rgba(255, 140, 42, 0.85)'
+            ];
+            const delays = [0, 120, 240];
+            const waves = [];
+
+            colors.forEach((color, i) => {
+                const wave = document.createElement('div');
+                wave.style.cssText = `
+                    position: fixed;
+                    left: 0;
+                    width: 100%;
+                    height: 120%;
+                    background: ${color};
+                    z-index: ${99996 + i};
+                    bottom: -120%;
+                    transition: bottom 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+                `;
+
+                // SVG 물결 상단
+                wave.innerHTML = `
+                    <svg viewBox="0 0 1440 80" preserveAspectRatio="none"
+                        style="position:absolute;top:-78px;left:0;width:100%;height:80px;display:block;">
+                        <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z"
+                            fill="${color}"/>
+                    </svg>
+                `;
+
+                document.body.appendChild(wave);
+                waves.push(wave);
+
+                setTimeout(() => {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            wave.style.bottom = '0';
+                        });
+                    });
+                }, delays[i]);
+            });
+
+            // 페이지 전환
+            setTimeout(() => {
+                document.querySelectorAll('#authorNav .view-nav-item').forEach(i => i.classList.remove('active'));
+                const writeNavBtn = document.querySelector('#authorNav .view-nav-item[data-page="authorWritePage"]');
+                if (writeNavBtn) writeNavBtn.classList.add('active');
+                showPage('authorWritePage');
+
+                // 파도 빠지기 (역순으로)
+                [...waves].reverse().forEach((wave, i) => {
+                    setTimeout(() => {
+                        wave.style.transition = 'bottom 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
+                        wave.style.bottom = '120%';
+                        setTimeout(() => wave.remove(), 520);
+                    }, i * 80);
+                });
+            }, 750);
+        };
     }
 }
 
@@ -1546,14 +1864,29 @@ function renderBookshelf() {
                 chosenClass: 'dragging-chosen',
                 filter: '.work-card-like-btn',
                 preventOnFilter: true,
-                onEnd: function() {
+                onEnd: async function() {
                     const nextOrder = [];
                     bookshelfGrid.querySelectorAll('.work-card[data-id]').forEach(card => {
                         nextOrder.push(parseInt(card.dataset.id, 10));
                     });
                     likedWorksOrder = nextOrder;
                     syncLikedWorksSet();
-                    saveLikedWorks();
+
+                    const { data: { user } } = await supabase.auth.getUser();
+
+                    if (user) {
+                        // 순서 변경을 Supabase에 반영
+                        const updates = likedWorksOrder.map((workId, index) =>
+                            supabase
+                                .from('user_likes')
+                                .update({ sort_order: index })
+                                .eq('user_id', user.id)
+                                .eq('work_id', workId)
+                        );
+                        await Promise.all(updates);
+                    } else {
+                        saveLikedWorks();
+                    }
                 }
             });
         }
@@ -1566,47 +1899,74 @@ function renderBookshelf() {
 function addLikeButtonListeners() {
     const likeButtons = document.querySelectorAll('.work-card-like-btn');
     likeButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
+        const newBtn = button.cloneNode(true);
+        button.parentNode.replaceChild(newBtn, button);
+        newBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            toggleLike(button);
+            toggleLike(newBtn);
         });
     });
 }
 
 // 찜하기 토글
-function toggleLike(button) {
+async function toggleLike(button) {
     const workId = parseInt(button.dataset.workId);
-    
+    const { data: { user } } = await supabase.auth.getUser();
+
     if (likedWorks.has(workId)) {
+        // 찜 해제
         likedWorks.delete(workId);
         likedWorksOrder = likedWorksOrder.filter(id => id !== workId);
         button.classList.remove('liked');
         button.classList.add('unliked');
         button.textContent = '♡';
         button.title = '찜하기';
+
+        if (user) {
+            await supabase
+                .from('user_likes')
+                .delete()
+                .eq('user_id', user.id)
+                .eq('work_id', workId);
+        } else {
+            saveLikedWorks();
+        }
     } else {
+        // 찜 추가
         likedWorks.add(workId);
         likedWorksOrder.push(workId);
         button.classList.remove('unliked');
         button.classList.add('liked');
         button.textContent = '♥';
         button.title = '찜 해제';
+
+        if (user) {
+            await supabase
+                .from('user_likes')
+                .insert({
+                    user_id: user.id,
+                    work_id: workId,
+                    sort_order: likedWorksOrder.length
+                });
+        } else {
+            saveLikedWorks();
+        }
     }
-    
+
     syncLikedWorksSet();
-    saveLikedWorks();
-    
-    // 책꽂이 페이지가 열려있으면 업데이트
+
     if (document.getElementById('bookshelfPage').style.display !== 'none') {
         renderBookshelf();
     }
-
     if (document.getElementById('homePage').style.display !== 'none') {
         renderHome();
     }
-
     if (document.getElementById('myPage').style.display !== 'none') {
         renderMyPage();
+    }
+    if (document.getElementById('explorePage').style.display !== 'none') {
+        renderWorks(currentFilter);
+        renderBookshelf();
     }
 }
 
@@ -1618,6 +1978,16 @@ function showPage(pageId) {
     const overlay = document.getElementById('pageTransitionOverlay');
     overlay.style.opacity = '1';
     overlay.style.pointerEvents = 'all';
+
+    // Ripple 효과 생성
+    const ripple = document.createElement('div');
+    ripple.className = 'ripple';
+    const size = Math.max(window.innerWidth, window.innerHeight) * 2;
+    ripple.style.width = size + 'px';
+    ripple.style.height = size + 'px';
+    ripple.style.left = (window.innerWidth / 2 - size / 2) + 'px';
+    ripple.style.top = (window.innerHeight / 2 - size / 2) + 'px';
+    overlay.appendChild(ripple);
 
     setTimeout(() => {
         pages.forEach(page => {
@@ -1644,16 +2014,20 @@ function showPage(pageId) {
             if (pageId === 'bookshelfPage') renderBookshelf();
             if (pageId === 'homePage') renderHome();
             if (pageId === 'authorHomePage') renderAuthorHome();
+            if (pageId === 'authorWritePage') renderAuthorWrite();
             if (pageId === 'viewPage') renderViewPage();
             if (pageId === 'myPage') renderMyPage();
             if (pageId === 'authorMyPage') renderAuthorMyPage();
         }
 
-        window.scrollTo(0, 0);
-
         setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: 'instant' });
             overlay.style.opacity = '0';
             overlay.style.pointerEvents = 'none';
+            // Ripple 엘리먼트 제거
+            if (ripple.parentNode === overlay) {
+                overlay.removeChild(ripple);
+            }
         }, 50);
     }, 200);
 }
@@ -1756,6 +2130,12 @@ function setupNavigation() {
             e.preventDefault();
             bottomNavItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
+
+            // 드롭다운 닫기
+            const dropdown = document.getElementById('profileDropdown');
+            if (dropdown) dropdown.style.display = 'none';
+            const tooltip = document.getElementById('readerModeTooltip');
+            if (tooltip) tooltip.style.display = 'none';
             
             const pages = ['homePage', 'explorePage', 'bookshelfPage', 'myPage'];
             showPage(pages[index]);
@@ -1779,58 +2159,378 @@ function setupViewSettings() {
     });
 }
 
-function switchMode(mode) {
-    const isAuthor = mode === 'author';
-    const btn = document.getElementById('modeToggleBtn');
+function bindHeaderNavEvents() {
+    document.querySelectorAll('#readerNav .view-nav-item').forEach(item => {
+        item.onclick = (e) => {
+            e.preventDefault();
+            document.querySelectorAll('#readerNav .view-nav-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+
+            // 드롭다운 닫기
+            const dropdown = document.getElementById('profileDropdown');
+            if (dropdown) dropdown.style.display = 'none';
+            const tooltip = document.getElementById('readerModeTooltip');
+            if (tooltip) tooltip.style.display = 'none';
+
+            showPage(item.dataset.page);
+        };
+    });
+
+    document.querySelectorAll('#authorNav .view-nav-item').forEach(item => {
+        item.onclick = (e) => {
+            e.preventDefault();
+            document.querySelectorAll('#authorNav .view-nav-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+
+            // 드롭다운 닫기
+            const dropdown = document.getElementById('profileDropdown');
+            if (dropdown) dropdown.style.display = 'none';
+            const tooltip = document.getElementById('readerModeTooltip');
+            if (tooltip) tooltip.style.display = 'none';
+
+            showPage(item.dataset.page);
+        };
+    });
+}
+
+function renderHeaderBySession(user, profile = null) {
     const readerNav = document.getElementById('readerNav');
-    const authorNav = document.getElementById('authorNav');
+    let authorNav = document.getElementById('authorNav');
+    const headerAuthButtons = document.querySelector('.header-auth-buttons');
+    const header = document.querySelector('.header');
 
-    btn.textContent = isAuthor ? '📖' : '✏️';
-    btn.title = isAuthor ? '독자 모드로 전환' : '작가 모드로 전환';
-    btn.style.backgroundColor = isAuthor ? '#FF8C2A' : '';
-    btn.style.boxShadow = isAuthor ? '0 2px 8px rgba(255, 140, 42, 0.4)' : '';
-
-    if (isAuthor) {
-        document.body.classList.add('author-mode-active');
-        if (readerNav) readerNav.style.display = 'none';
-        if (authorNav) authorNav.style.display = 'flex';
-
-        // display 변경 후에 색상 적용
-        requestAnimationFrame(() => {
-            document.querySelectorAll('#authorNav .view-nav-item').forEach(i => {
-                i.classList.remove('active');
-                i.style.color = '';
-                const s = i.querySelector('svg');
-                if (s) s.style.stroke = '';
-            });
-            const authorHomeBtn = document.querySelector('#authorNav .view-nav-item[data-page="authorHomePage"]');
-            if (authorHomeBtn) {
-                authorHomeBtn.classList.add('active');
-                authorHomeBtn.style.color = '#FF8C2A';
-                const svg = authorHomeBtn.querySelector('svg');
-                if (svg) svg.style.stroke = '#FF8C2A';
-            }
-        });
-
-        showPage('authorHomePage');
-    } else {
-        document.body.classList.remove('author-mode-active');
-        if (readerNav) readerNav.style.display = 'flex';
-        if (authorNav) authorNav.style.display = 'none';
-        document.querySelectorAll('#readerNav .view-nav-item').forEach(i => i.classList.remove('active'));
-        const readerHomeBtn = document.querySelector('#readerNav .view-nav-item[data-page="homePage"]');
-        if (readerHomeBtn) readerHomeBtn.classList.add('active');
-        showPage('homePage');
+    if (readerNav && !authorNav) {
+        readerNav.insertAdjacentHTML('afterend', `
+            <nav id="authorNav" class="view-top-nav" style="display: none;">
+                <a href="#" class="view-nav-item" data-page="authorHomePage">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12h18M3 6h18M3 18h18"></path>
+                    </svg>
+                    <span class="nav-label">홈</span>
+                </a>
+                <a href="#" class="view-nav-item" data-page="authorWritePage">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                    </svg>
+                    <span class="nav-label">창작</span>
+                </a>
+            </nav>
+        `);
+        authorNav = document.getElementById('authorNav');
     }
+
+    if (!readerNav || !authorNav || !headerAuthButtons) return;
+
+    const setHeaderModeUI = () => {
+        if (currentMode === 'author') {
+            readerNav.style.display = 'none';
+            authorNav.style.display = 'flex';
+            document.querySelectorAll('#authorNav .view-nav-item').forEach(i => i.classList.remove('active'));
+            const authorHomeBtn = document.querySelector('#authorNav .view-nav-item[data-page="authorHomePage"]');
+            if (authorHomeBtn) authorHomeBtn.classList.add('active');
+            document.body.classList.add('author-mode-active');
+            if (header) header.classList.add('author-mode-active');
+        } else {
+            authorNav.style.display = 'none';
+            readerNav.style.display = 'flex';
+            document.body.classList.remove('author-mode-active');
+            if (header) header.classList.remove('author-mode-active');
+        }
+    };
+
+    if (!user) {
+        currentMode = 'reader';
+        currentUserProfile = null;
+
+        readerNav.innerHTML = `
+                <a href="#" class="view-nav-item active" data-page="homePage">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12h18M3 6h18M3 18h18"></path>
+                    </svg>
+                    <span class="nav-label">홈</span>
+                </a>
+                <a href="#" class="view-nav-item" data-page="explorePage">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <span class="nav-label">탐색</span>
+                </a>
+        `;
+
+        headerAuthButtons.innerHTML = `
+                <button onclick="window.location.href='/login'" style="border: 2px solid #5BB8F5; color: #5BB8F5; background: white; border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer;">로그인</button>
+                <button onclick="window.location.href='/signup'" style="background: #5BB8F5; color: white; border: none; border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer;">회원가입</button>
+        `;
+
+        setHeaderModeUI();
+        bindHeaderNavEvents();
+        return;
+    }
+
+    currentUserProfile = profile;
+
+    readerNav.innerHTML = `
+            <a href="#" class="view-nav-item active" data-page="homePage">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12h18M3 6h18M3 18h18"></path>
+                </svg>
+                <span class="nav-label">홈</span>
+            </a>
+            <a href="#" class="view-nav-item" data-page="explorePage">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <span class="nav-label">탐색</span>
+            </a>
+            <a href="#" class="view-nav-item" data-page="bookshelfPage">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <span class="nav-label">책꽂이</span>
+            </a>
+    `;
+
+    const displayName = profile?.nickname || user.user_metadata?.nickname || user.email?.split('@')[0] || '내 프로필';
+    const role = profile?.role || user.user_metadata?.role || 'reader';
+    const birthYear = profile?.birth_year ? Number(profile.birth_year) : null;
+    const isWriter = role === 'writer';
+
+    if (!isWriter) {
+        currentMode = 'reader';
+    }
+
+    const modeButtonColor = currentMode === 'author' ? '#FF6B2C' : '#5BB8F5';
+    const modeButtonIcon = currentMode === 'author' ? '📖' : '✏️';
+    const canCreateWriterProfile = !birthYear || birthYear <= 2010;
+    const readerTooltipHtml = canCreateWriterProfile
+        ? '아직 작가 프로필을 생성하지 않았어요. <a href="/signup" style="color: #FF6B2C; text-decoration: none; font-weight: 700;">생성</a>하러 갈까요?'
+        : '연령 제한 때문에 작가 프로필 생성이 어려워요';
+
+    headerAuthButtons.innerHTML = `
+            <div id="profileMenuWrap" style="position: relative; display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px; flex-shrink: 0; width: fit-content;">
+                <button id="profileMenuBtn" style="width: 32px; height: 32px; border-radius: 50%; background: #EEF4FB; border: 1px solid #D5E8F7; color: #5BB8F5; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; cursor: pointer;">${displayName.charAt(0)}</button>
+                <span id="profileNameText" style="color: #2C3E50; font-size: 13px; font-weight: 600; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;">${displayName}</span>
+                <button id="writerModeBtn" style="border: none; background: ${modeButtonColor}; color: white; border-radius: 20px; width: 34px; height: 34px; font-size: 15px; font-weight: 700; cursor: pointer; margin-left: 0; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;" title="모드 전환">${modeButtonIcon}</button>
+
+                <div id="profileDropdown" style="display: none; position: absolute; top: 42px; right: 44px; min-width: 140px; background: white; border: 1px solid #D5E8F7; border-radius: 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); overflow: hidden; z-index: 30;">
+                    <button id="profileGoMyPage" style="width: 100%; border: none; background: white; text-align: left; padding: 10px 12px; font-size: 13px; color: #2C3E50; cursor: pointer;">마이페이지</button>
+                    <button id="profileLogoutBtn" style="width: 100%; border: none; background: white; text-align: left; padding: 10px 12px; font-size: 13px; color: #E11D48; cursor: pointer;">로그아웃</button>
+                </div>
+
+                <div id="readerModeTooltip" style="display: none; position: absolute; bottom: 120%; right: 0; background: white; color: #2C3E50; padding: 10px 12px; border-radius: 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12); font-size: 13px; line-height: 1.4; white-space: nowrap; z-index: 31;">
+                    <div>${readerTooltipHtml}</div>
+                    <div style="position: absolute; left: 50%; transform: translateX(-50%); bottom: -8px; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid white;"></div>
+                </div>
+            </div>
+    `;
+
+    const profileMenuBtn = document.getElementById('profileMenuBtn');
+    const profileNameText = document.getElementById('profileNameText');
+    const profileDropdown = document.getElementById('profileDropdown');
+    const profileGoMyPage = document.getElementById('profileGoMyPage');
+    const profileLogoutBtn = document.getElementById('profileLogoutBtn');
+    const writerModeBtn = document.getElementById('writerModeBtn');
+    const readerModeTooltip = document.getElementById('readerModeTooltip');
+
+    headerAuthButtons.style.display = 'flex';
+    headerAuthButtons.style.alignItems = 'center';
+    headerAuthButtons.style.justifyContent = 'flex-end';
+    headerAuthButtons.style.gap = '8px';
+
+    if (profileMenuBtn && profileDropdown) {
+        profileMenuBtn.onclick = (e) => {
+            e.stopPropagation();
+            profileDropdown.style.display = profileDropdown.style.display === 'none' ? 'block' : 'none';
+            if (readerModeTooltip) {
+                readerModeTooltip.style.display = 'none';
+            }
+        };
+    }
+
+    if (profileNameText) {
+        profileNameText.onclick = (e) => {
+            e.stopPropagation();
+            const myPageKey = currentMode === 'author' ? 'authorMyPage' : 'myPage';
+            const navSelector = currentMode === 'author' ? '#authorNav .view-nav-item' : '#readerNav .view-nav-item';
+            showPage(myPageKey);
+            document.querySelectorAll(navSelector).forEach(i => i.classList.remove('active'));
+            const myPageNav = document.querySelector(`${navSelector}[data-page="${myPageKey}"]`);
+            if (myPageNav) myPageNav.classList.add('active');
+            if (profileDropdown) profileDropdown.style.display = 'none';
+            if (readerModeTooltip) readerModeTooltip.style.display = 'none';
+        };
+    }
+
+    if (profileGoMyPage) {
+        profileGoMyPage.onclick = (e) => {
+            e.stopPropagation();
+            if (profileDropdown) profileDropdown.style.display = 'none';
+            const myPageKey = currentMode === 'author' ? 'authorMyPage' : 'myPage';
+            const navSelector = currentMode === 'author' ? '#authorNav .view-nav-item' : '#readerNav .view-nav-item';
+            showPage(myPageKey);
+            document.querySelectorAll(navSelector).forEach(i => i.classList.remove('active'));
+            const myPageNav = document.querySelector(`${navSelector}[data-page="${myPageKey}"]`);
+            if (myPageNav) myPageNav.classList.add('active');
+        };
+    }
+
+    if (profileLogoutBtn) {
+        profileLogoutBtn.onclick = async (e) => {
+            e.stopPropagation();
+            await supabase.auth.signOut();
+            if (profileDropdown) profileDropdown.style.display = 'none';
+        };
+    }
+
+    if (writerModeBtn) {
+        writerModeBtn.onclick = (e) => {
+            e.stopPropagation();
+
+            if (profileDropdown) profileDropdown.style.display = 'none';
+
+            if (isWriter) {
+                currentMode = currentMode === 'author' ? 'reader' : 'author';
+                renderHeaderBySession(user, profile);
+                if (currentMode === 'author') {
+                    renderAuthorHome();
+                    showPage('authorHomePage');
+                    document.querySelectorAll('#authorNav .view-nav-item').forEach(i => i.classList.remove('active'));
+                    const authorHomeBtn = document.querySelector('#authorNav .view-nav-item[data-page="authorHomePage"]');
+                    if (authorHomeBtn) authorHomeBtn.classList.add('active');
+                } else {
+                    showPage('homePage');
+                }
+                return;
+            }
+
+            if (readerModeTooltip) {
+                readerModeTooltip.style.display = readerModeTooltip.style.display === 'none' ? 'block' : 'none';
+            }
+        };
+    }
+
+    setHeaderModeUI();
+    bindHeaderNavEvents();
+}
+
+async function applySessionState(session) {
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        mainContent.style.display = 'block';
+    }
+
+    const user = session?.user || null;
+
+    if (!user) {
+        renderHeaderBySession(null, null);
+        showPage('homePage');
+        return;
+    }
+
+    let profile = null;
+    try {
+        const { data } = await supabase
+            .from('profiles')
+            .select('nickname, role, author_nickname, birth_year')
+            .eq('id', user.id)
+            .single();
+        profile = data || null;
+    } catch (e) {
+        profile = null;
+    }
+
+    renderHeaderBySession(user, profile);
+    showPage('homePage');
+}
+
+async function setupAuthSessionWatcher() {
+    const { data } = await supabase.auth.getSession();
+    await applySessionState(data?.session || null);
+
+    const { data: authData } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        await applySessionState(session);
+    });
+
+    authSubscription = authData?.subscription || null;
 }
 
 // 초기화 함수
 window.closeModal = closeModal;
 window.openWork = openWork;
 window.handleImageError = handleImageError;
+window.openAddWorkModal = openAddWorkModal;
+window.closeAddWorkModal = closeAddWorkModal;
+window.goBackToStep1 = goBackToStep1;
+window.goBackToStep2 = goBackToStep2;
 
-function init() {
-    loadLikedWorks();
+async function renderAuthorWrite() {
+    const myWorksGrid = document.getElementById('myWorksGrid');
+    const emptyCreation = document.getElementById('emptyCreation');
+    
+    if (!myWorksGrid || !emptyCreation) return;
+
+    // Supabase에서 내 작품 목록 불러오기
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: myWorks } = await supabase
+        .from('works')
+        .select('*')
+        .eq('author_id', user.id)
+        .order('created_at', { ascending: false });
+
+    // 가이드 배너 항상 표시
+    const guideBanner = document.getElementById('creationGuideBanner');
+    if (guideBanner) guideBanner.style.display = 'flex';
+
+    if (!myWorks || myWorks.length === 0) {
+        myWorksGrid.innerHTML = '';
+        emptyCreation.style.display = 'block';
+    } else {
+        emptyCreation.style.display = 'none';
+        myWorksGrid.innerHTML = myWorks.map(work => `
+            <div class="author-work-card">
+                <div class="author-work-cover">
+                    ${work.cover_url
+                        ? `<img src="${work.cover_url}" alt="${work.title}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`
+                        : `<div style="width:100%;height:100%;background:linear-gradient(135deg,#FFE0C0,#FFB347);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:2rem;">📖</div>`
+                    }
+                </div>
+                <div class="author-work-info">
+                    <h3 class="author-work-title">${work.title}</h3>
+                    <p class="author-work-synopsis">${work.synopsis || ''}</p>
+                    <div class="author-work-meta">
+                        <span class="author-work-genre">${work.genre || ''}</span>
+                        <span class="author-work-status ${work.is_published ? 'published' : 'draft'}">${work.is_published ? '공개 중' : '비공개'}</span>
+                    </div>
+                </div>
+                <div class="author-work-actions">
+                    <button class="author-work-btn author-work-btn--edit" data-work-id="${work.id}">✏️ 수정</button>
+                    <button class="author-work-btn author-work-btn--home" data-work-id="${work.id}">🏠 작품 홈</button>
+                </div>
+            </div>
+        `).join('');
+
+        myWorksGrid.querySelectorAll('.author-work-btn--edit').forEach(btn => {
+            btn.addEventListener('click', () => {
+                alert('수정 기능은 준비 중이에요!');
+            });
+        });
+        myWorksGrid.querySelectorAll('.author-work-btn--home').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const workId = btn.dataset.workId;
+                openModal(workId);
+            });
+        });
+    }
+}
+
+async function init() {
+    await loadLikedWorks();
     renderHome();
     renderCategories();
     renderWorks();
@@ -1838,32 +2538,8 @@ function init() {
     setupCompletionFilter();
     setupNavigation();
     setupViewSettings();
-
-    document.querySelectorAll('#readerNav .view-nav-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.querySelectorAll('#readerNav .view-nav-item').forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            showPage(item.dataset.page);
-        });
-    });
-
-    document.querySelectorAll('#authorNav .view-nav-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.querySelectorAll('#authorNav .view-nav-item').forEach(i => {
-                i.classList.remove('active');
-                i.style.color = '';
-                const svg = i.querySelector('svg');
-                if (svg) svg.style.stroke = '';
-            });
-            item.classList.add('active');
-            item.style.color = '#FF8C2A';
-            const svg = item.querySelector('svg');
-            if (svg) svg.style.stroke = '#FF8C2A';
-            showPage(item.dataset.page);
-        });
-    });
+    bindHeaderNavEvents();
+    setupAuthSessionWatcher();
 
     document.querySelector('.logo').addEventListener('click', () => {
         if (currentMode === 'author') {
@@ -1890,12 +2566,318 @@ function init() {
         nextEpisodeBtn.addEventListener('click', goToNextEpisode);
     }
 
-    const modeToggleBtn = document.getElementById('modeToggleBtn');
-    if (modeToggleBtn) {
-        modeToggleBtn.addEventListener('click', () => {
-            currentMode = currentMode === 'reader' ? 'author' : 'reader';
-            switchMode(currentMode);
+    // 작품 등록 버튼 이벤트
+    const addWorkBtn = document.getElementById('addWorkBtn');
+    const emptyAddWorkBtn = document.getElementById('emptyAddWorkBtn');
+
+    if (addWorkBtn) {
+        addWorkBtn.addEventListener('click', () => {
+            const popup = document.getElementById('addWorkGuidePopup');
+            if (popup) popup.style.display = 'none';
+            openAddWorkModal();
         });
+    }
+
+    if (emptyAddWorkBtn) {
+        emptyAddWorkBtn.addEventListener('click', openAddWorkModal);
+    }
+
+    // 1단계: 동의 버튼
+    const agreeBtn = document.getElementById('agreeBtn');
+    if (agreeBtn) {
+        agreeBtn.addEventListener('click', () => {
+            showAddWorkStep(2);
+        });
+    }
+
+    // 2단계: 다음 버튼
+    const nextBtn = document.getElementById('nextBtn');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            if (validateStep2()) {
+                // 3단계에 태그 렌더링
+                renderAddWorkTags();
+                showAddWorkStep(3);
+            }
+        });
+    }
+
+    // 3단계: 작품 등록 버튼
+    const submitWorkBtn = document.getElementById('submitWorkBtn');
+    if (submitWorkBtn) {
+        submitWorkBtn.addEventListener('click', () => {
+            if (addWorkSelectedTags.size === 0) {
+                alert('최소 1개 이상의 태그를 선택해주세요.');
+                return;
+            }
+            submitWorkBtn.disabled = true;
+            submitWorkBtn.textContent = '등록 중...';
+            saveWorkToSupabase().then(() => {
+                submitWorkBtn.disabled = false;
+                submitWorkBtn.textContent = '작품 등록';
+            });
+        });
+    }
+
+    // 표지 이미지 미리보기
+    const workCoverInput = document.getElementById('workCover');
+    if (workCoverInput) {
+        workCoverInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('파일 크기가 5MB를 초과합니다. 더 작은 이미지를 선택해주세요.');
+                    e.target.value = '';
+                    return;
+                }
+                addWorkFormData.coverFile = file;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const preview = document.getElementById('coverPreview');
+                    const img = document.getElementById('coverPreviewImg');
+                    img.src = event.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+}
+
+// 3단계 태그 렌더링
+function renderAddWorkTags() {
+    const genre = addWorkFormData.genre;
+    const tagContainer = document.getElementById('addWorkAuthorTags');
+    
+    if (!tagContainer) return;
+    
+    // 해당 장르의 태그 가져오기
+    const genreTags = commonTags[genre] ? commonTags[genre].author : [];
+    
+    // 태그 버튼 생성
+    tagContainer.innerHTML = genreTags
+        .map(tag => `
+            <button class="hashtag-btn-author ${addWorkSelectedTags.has(tag) ? 'active' : ''}" data-tag="${tag}" style="padding: 6px 12px; border: 1px solid ${addWorkSelectedTags.has(tag) ? '#5BB8F5' : '#D5E8F7'}; background: ${addWorkSelectedTags.has(tag) ? '#5BB8F5' : 'white'}; color: ${addWorkSelectedTags.has(tag) ? 'white' : '#5BB8F5'}; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s ease;">#${tag}</button>
+        `)
+        .join('');
+    
+    // 태그 버튼 이벤트
+    tagContainer.querySelectorAll('.hashtag-btn-author').forEach(button => {
+        button.addEventListener('click', () => {
+            const tag = button.dataset.tag;
+            if (addWorkSelectedTags.has(tag)) {
+                addWorkSelectedTags.delete(tag);
+                button.classList.remove('active');
+                button.style.border = '1px solid #D5E8F7';
+                button.style.background = 'white';
+                button.style.color = '#5BB8F5';
+            } else {
+                addWorkSelectedTags.add(tag);
+                button.classList.add('active');
+                button.style.border = '1px solid #5BB8F5';
+                button.style.background = '#5BB8F5';
+                button.style.color = 'white';
+            }
+        });
+    });
+}
+
+// 작품 등록 모달 관련 변수
+let addWorkFormData = {
+    genre: '',
+    title: '',
+    synopsis: '',
+    isAI: false,
+    coverFile: null,
+    coverUrl: null
+};
+let addWorkSelectedTags = new Set();
+
+// 작품 등록 모달 열기
+function openAddWorkModal() {
+    const modal = document.getElementById('addWorkModal');
+    modal.style.display = 'flex';
+    modal.classList.remove('modal-closing');
+    modal.classList.add('modal-opening');
+    document.documentElement.style.overflowY = 'hidden';
+}
+
+// 작품 등록 모달 닫기
+function closeAddWorkModal() {
+    const modal = document.getElementById('addWorkModal');
+    modal.classList.remove('modal-opening');
+    modal.classList.add('modal-closing');
+    setTimeout(() => {
+        modal.style.display = 'none';
+        modal.classList.remove('modal-closing');
+        document.documentElement.style.overflowY = 'scroll';
+        // 모달 닫을 때 폼 초기화
+        resetAddWorkForm();
+    }, 250);
+}
+
+// 작품 등록 폼 초기화
+function resetAddWorkForm() {
+    addWorkFormData = {
+        genre: '',
+        title: '',
+        synopsis: '',
+        isAI: false,
+        coverFile: null,
+        coverUrl: null
+    };
+    addWorkSelectedTags.clear();
+    
+    document.getElementById('workGenre').value = '';
+    document.getElementById('workTitle').value = '';
+    document.getElementById('workSynopsis').value = '';
+    document.getElementById('workIsAI').checked = false;
+    document.getElementById('workCover').value = '';
+    const coverPreview = document.getElementById('coverPreview');
+    coverPreview.style.display = 'none';
+    
+    showAddWorkStep(1);
+}
+
+// 특정 단계 표시
+function showAddWorkStep(step) {
+    document.getElementById('addWorkStep1').style.display = step === 1 ? 'block' : 'none';
+    document.getElementById('addWorkStep2').style.display = step === 2 ? 'block' : 'none';
+    document.getElementById('addWorkStep3').style.display = step === 3 ? 'block' : 'none';
+}
+
+// 1단계로 돌아가기 (Step2에서)
+function goBackToStep1() {
+    showAddWorkStep(1);
+}
+
+// 2단계로 돌아가기 (Step3에서)
+function goBackToStep2() {
+    showAddWorkStep(2);
+}
+
+// 작품 정보 검증 (Step2)
+function validateStep2() {
+    const genre = document.getElementById('workGenre').value.trim();
+    const title = document.getElementById('workTitle').value.trim();
+    const synopsis = document.getElementById('workSynopsis').value.trim();
+    
+    if (!genre) {
+        alert('장르를 선택해주세요.');
+        return false;
+    }
+    if (!title) {
+        alert('제목을 입력해주세요.');
+        return false;
+    }
+    if (title.length < 2) {
+        alert('제목은 최소 2자 이상이어야 합니다.');
+        return false;
+    }
+    if (!synopsis) {
+        alert('줄거리를 입력해주세요.');
+        return false;
+    }
+    if (synopsis.length < 10) {
+        alert('줄거리는 최소 10자 이상이어야 합니다.');
+        return false;
+    }
+    if (synopsis.length > 100) {
+        alert('줄거리는 최대 100자까지 입력 가능합니다.');
+        return false;
+    }
+    
+    // 폼 데이터 저장
+    addWorkFormData.genre = genre;
+    addWorkFormData.title = title;
+    addWorkFormData.synopsis = synopsis;
+    addWorkFormData.isAI = document.getElementById('workIsAI').checked;
+    
+    return true;
+}
+
+// 작품 저장 (Supabase)
+async function saveWorkToSupabase() {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+            alert('로그인이 필요합니다.');
+            return false;
+        }
+        
+        let coverUrl = null;
+        
+        // 표지 이미지 업로드
+        if (addWorkFormData.coverFile) {
+            const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const { data: uploadData, error: uploadError } = await supabase
+                .storage
+                .from('covers')
+                .upload(fileName, addWorkFormData.coverFile);
+            
+            if (uploadError) {
+                console.error('표지 업로드 실패:', uploadError);
+                alert('표지 이미지 업로드에 실패했습니다.');
+                return false;
+            }
+            
+            // 업로드된 파일의 공개 URL 가져오기
+            const { data: { publicUrl } } = supabase
+                .storage
+                .from('covers')
+                .getPublicUrl(fileName);
+            
+            coverUrl = publicUrl;
+        }
+        
+        // 작품 정보 저장
+        const { data: workData, error: workError } = await supabase
+            .from('works')
+            .insert([
+                {
+                    author_id: user.id,
+                    title: addWorkFormData.title,
+                    synopsis: addWorkFormData.synopsis,
+                    cover_url: coverUrl,
+                    genre: addWorkFormData.genre,
+                    is_ai: addWorkFormData.isAI,
+                    status: 'draft',
+                    is_published: false
+                }
+            ])
+            .select()
+            .single();
+        
+        if (workError) {
+            console.error('작품 저장 실패:', workError);
+            alert('작품 등록에 실패했습니다.');
+            return false;
+        }
+
+        // work_tags 테이블에 작가 태그 저장
+        if (addWorkSelectedTags.size > 0 && workData?.id) {
+            const tagRows = Array.from(addWorkSelectedTags).map(tag => ({
+                work_id: workData.id,
+                tag: tag,
+                tag_type: 'author'
+            }));
+            const { error: tagError } = await supabase
+                .from('work_tags')
+                .insert(tagRows);
+            if (tagError) {
+                console.error('태그 저장 실패:', tagError);
+            }
+        }
+        
+        alert('작품이 성공적으로 등록되었습니다!');
+        closeAddWorkModal();
+        renderAuthorHome();
+        return true;
+    } catch (error) {
+        console.error('작품 등록 오류:', error);
+        alert('작품 등록 중 오류가 발생했습니다.');
+        return false;
     }
 }
 
@@ -1909,6 +2891,9 @@ init();
 
     return () => {
       disposed = true;
+            if (authSubscription) {
+                authSubscription.unsubscribe();
+            }
       if (typeof window !== 'undefined') {
         delete window.closeModal;
         delete window.openWork;
