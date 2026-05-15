@@ -1347,8 +1347,9 @@ function openModal(workId) {
                     tooltip.style.display = tooltip.style.display === 'none' ? 'block' : 'none';
                 }
             } else {
+                const targetWorkId = workId;
                 closeModal();
-                setTimeout(() => openViewPage(workId), 260);
+                setTimeout(() => openViewPage(targetWorkId), 260);
             }
         };
     }

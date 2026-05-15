@@ -17,6 +17,15 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="ko">
+      <head>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-DLYFZLY24B"></script>
+        <script dangerouslySetInnerHTML={{__html: `
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-DLYFZLY24B');
+`}} />
+      </head>
       <body>
         {shouldEnableGa && (
           <>

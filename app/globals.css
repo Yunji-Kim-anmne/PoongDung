@@ -2735,45 +2735,49 @@ html {
 }
 
 .add-episode-modal-container {
-    width: 90%;
-    max-width: 480px;
-    max-height: 85vh;
-    border-radius: 20px;
-    background: white;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  border-radius: 20px;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
 }
 
 .add-episode-body {
-    padding: 1.5rem 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-    overflow-y: auto;
-    flex: 1;
+  padding: 2rem 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .add-episode-label {
-    display: block;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 0.4rem;
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 0.5rem;
 }
 
 .add-episode-input {
-    width: 100%;
-    padding: 0.7rem 1rem;
-    border: 1.5px solid #E8E8E8;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    box-sizing: border-box;
-    outline: none;
+  width: 100%;
+  padding: 0.85rem 1.1rem;
+  border: 1.5px solid #E8E8E8;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  outline: none;
+  background: #FAFAFA;
+  transition: border-color 0.2s;
 }
 
 .add-episode-input:focus {
-    border-color: #FF8C2A;
+  border-color: #FF8C2A;
+  background: white;
 }
 
 .add-episode-textarea {
@@ -2794,28 +2798,59 @@ html {
 }
 
 .add-episode-footer {
-    display: flex;
-    gap: 0.8rem;
-    padding: 1rem 2rem 1.5rem;
-    border-top: 1.5px solid #E8E8E8;
+  display: flex;
+  gap: 0.8rem;
+  padding: 1rem 2rem 1.75rem;
+  border-top: 1.5px solid #E8E8E8;
+  background: white;
 }
 
 .add-episode-save-btn {
-    flex: 1;
-    padding: 0.85rem;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
+  flex: 1;
+  padding: 1rem;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
 }
 
 .add-episode-save-btn.draft {
-    background: #F0F0F0;
-    color: #555;
+  background: #F0F0F0;
+  color: #888;
 }
 
 .add-episode-save-btn.publish {
-    background: #FF8C2A;
-    color: white;
+  background: #FF8C2A;
+  color: white;
+}
+
+#addEpisodeModal .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 1.5rem 2rem 1rem;
+    border-bottom: 1.5px solid #E8E8E8;
+}
+
+#addEpisodeModal .modal-header-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #FF8C2A;
+    margin: 0;
+    text-align: center;
+}
+
+#addEpisodeModal .modal-close-btn {
+    position: absolute;
+    right: 1.2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    color: #aaa;
+    cursor: pointer;
 }
