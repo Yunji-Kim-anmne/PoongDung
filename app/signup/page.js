@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signup } from '../lib/auth';
+import { trackEvent } from '../lib/ga';
 import '../login/auth.css';
 
 export default function SignupPage() {
@@ -92,6 +93,10 @@ export default function SignupPage() {
     }
 
     if (user) {
+      trackEvent('signup_completed', {
+        method: 'email',
+        role,
+      });
       // 회원가입 성공 시 로그인 페이지로 이동
       router.push('/login?signup=success');
     }

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { supabase } from './lib/supabase';
+import { trackEvent, trackPageView, trackSubmitSuccess } from './lib/ga';
 
 const pageMarkup = `
     <div id="pageTransitionOverlay"></div>
@@ -351,9 +352,78 @@ const pageMarkup = `
                     </div>
                 </div>
             </section>
+                </div>
+
+                <div id="workHomePage" class="page-content author-mode" style="display: none;">
+    <div class="work-home-container">
+        <!-- 작품 기본 정보 -->
+        <div class="work-home-header">
+            <img id="workHomeCover" class="work-home-cover" src="" alt="표지" />
+            <div class="work-home-info">
+                <span id="workHomeGenre" class="work-home-genre"></span>
+                <h2 id="workHomeTitle" class="work-home-title"></h2>
+                <p id="workHomeAuthor" class="work-home-author"></p>
+                <p id="workHomeSynopsis" class="work-home-synopsis"></p>
+                <div id="workHomeTags" class="work-home-tags"></div>
+                <button class="work-home-edit-btn" onclick="openEditWork()">작품 정보 수정</button>
+            </div>
         </div>
 
-        <!-- 작가 마이페이지 -->
+        <!-- 회차 목록 -->
+        <div class="work-home-episodes">
+            <div class="work-home-episodes-header">
+                <h3>회차 목록</h3>
+                <button class="work-home-add-episode-btn" onclick="openAddEpisode()">+ 새 회차 추가</button>
+            </div>
+            <div id="workHomeEpisodeList" class="work-home-episode-list">
+                <p class="work-home-empty">아직 등록된 회차가 없습니다.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+                                <div id="addEpisodeModal" class="modal-overlay" style="display:none;">
+    <div class="modal-container add-episode-modal-container">
+        <div class="modal-header">
+            <h2 class="modal-header-title" id="addEpisodeModalTitle">새 회차 추가</h2>
+            <button class="modal-close-btn" onclick="closeAddEpisodeModal()">✕</button>
+        </div>
+
+        <div id="addEpisodeStep1" class="add-episode-body">
+            <div class="add-episode-field">
+                <label class="add-episode-label">회차 번호</label>
+                <input id="episodeNumberInput" type="number" class="add-episode-input" min="1" placeholder="예: 1" readonly />
+            </div>
+            <div class="add-episode-field">
+                <label class="add-episode-label">회차 제목 *</label>
+                <input id="episodeTitleInput" type="text" class="add-episode-input" placeholder="회차 제목을 입력해주세요" maxlength="100" />
+            </div>
+            <div class="add-episode-field">
+                <label class="add-episode-label">간략한 줄거리</label>
+                <input id="episodeSummaryInput" type="text" class="add-episode-input" placeholder="이번 화를 한 줄로 소개해주세요 (선택)" maxlength="100" />
+            </div>
+        </div>
+
+        <div id="addEpisodeStep2" class="add-episode-body" style="display:none;">
+            <div class="add-episode-field">
+                <label class="add-episode-label">본문 *</label>
+                <textarea id="episodeContentInput" class="add-episode-textarea" placeholder="내용을 입력해주세요"></textarea>
+            </div>
+        </div>
+
+        <div class="modal-footer add-episode-footer" id="addEpisodeFooter1">
+            <button class="add-episode-save-btn draft" onclick="closeAddEpisodeModal()">취소</button>
+            <button class="add-episode-save-btn publish" onclick="goToEpisodeStep2()">다음</button>
+        </div>
+
+        <div class="modal-footer add-episode-footer" id="addEpisodeFooter2" style="display:none;">
+            <button class="add-episode-save-btn draft" onclick="saveEpisode(false)">임시저장</button>
+            <button class="add-episode-save-btn publish" onclick="saveEpisode(true)">발행하기</button>
+        </div>
+    </div>
+</div>
+
+                <!-- 작가 마이페이지 -->
         <div id="authorMyPage" class="page-content author-mode" style="display: none;">
             <!-- 프로필 섹션 -->
             <section class="author-profile-section">
@@ -1005,6 +1075,7 @@ let bookshelfSortable = null;
 let currentPageId = 'homePage';
 let currentReadingWorkId = null;
 let currentReadingEpisodeIndex = 0;
+let currentWorkHomeId = null;
 let currentMode = 'reader';
 let readEpisodeCount = 0;
 let lastReadWorkId = null;
@@ -1621,6 +1692,10 @@ function renderHome() {
 
     if (goExploreBtn) {
         goExploreBtn.addEventListener('click', () => {
+            trackEvent('main_cta_clicked', {
+                cta_id: 'goExploreBtn',
+                destination: 'explorePage'
+            });
             const btn = document.getElementById('goExploreBtn');
             const btnRect = btn.getBoundingClientRect();
             const centerX = btnRect.left + btnRect.width / 2;
@@ -1704,7 +1779,7 @@ async function renderAuthorHome() {
             pastWorksGrid.querySelectorAll('.author-work-btn--home').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const workId = btn.dataset.workId;
-                    openModal(workId);
+                    openWorkHome(workId);
                 });
             });
         }
@@ -2015,9 +2090,13 @@ function showPage(pageId) {
             if (pageId === 'homePage') renderHome();
             if (pageId === 'authorHomePage') renderAuthorHome();
             if (pageId === 'authorWritePage') renderAuthorWrite();
+            if (pageId === 'workHomePage' && typeof renderWorkHome === 'function') renderWorkHome();
             if (pageId === 'viewPage') renderViewPage();
             if (pageId === 'myPage') renderMyPage();
             if (pageId === 'authorMyPage') renderAuthorMyPage();
+
+            // 내부 SPA 페이지 이동도 GA page_view로 기록
+            trackPageView(`${window.location.pathname}#${pageId}`);
         }
 
         setTimeout(() => {
@@ -2049,6 +2128,138 @@ function setupFilterButtons() {
         });
     });
 }
+
+// 작품홈 열기 (작가 모드)
+async function openWorkHome(workId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: work } = await supabase
+        .from('works')
+        .select('*')
+        .eq('id', workId)
+        .single();
+
+    if (!work) return;
+
+        const coverEl = document.getElementById('workHomeCover');
+        const coverSrc = work.cover_url || work.cover || '';
+        if (coverSrc) {
+            coverEl.style.display = 'block';
+            coverEl.src = coverSrc;
+        } else {
+            coverEl.style.display = 'none';
+            const parent = coverEl.parentNode;
+            let placeholder = parent.querySelector('.cover-placeholder');
+            if (!placeholder) {
+                placeholder = document.createElement('div');
+                placeholder.className = 'cover-placeholder';
+                parent.insertBefore(placeholder, coverEl);
+            }
+            placeholder.textContent = work.title || '';
+        }
+    document.getElementById('workHomeTitle').textContent = work.title || '';
+    document.getElementById('workHomeAuthor').textContent = user.user_metadata?.pen_name || '';
+    document.getElementById('workHomeGenre').textContent = work.genre || '';
+    document.getElementById('workHomeSynopsis').textContent = work.synopsis || '';
+
+    const tagsEl = document.getElementById('workHomeTags');
+    tagsEl.innerHTML = (work.tags || []).map(tag => `<span class="work-home-tag">#${tag}</span>`).join('');
+
+    currentWorkHomeId = workId;
+    renderWorkHomeEpisodes();
+    showPage('workHomePage');
+}
+window.openWorkHome = openWorkHome;
+
+async function openAddEpisode() {
+    const modal = document.getElementById('addEpisodeModal');
+    if (!modal) return;
+
+    const { data: episodes } = await supabase
+        .from('episodes')
+        .select('episode_number')
+        .eq('work_id', currentWorkHomeId)
+        .order('episode_number', { ascending: false })
+        .limit(1);
+
+    const nextNumber = episodes && episodes.length > 0 ? episodes[0].episode_number + 1 : 1;
+    document.getElementById('episodeNumberInput').value = nextNumber;
+    document.getElementById('episodeTitleInput').value = '';
+    document.getElementById('episodeContentInput').value = '';
+    modal.style.display = 'flex';
+}
+
+function closeAddEpisodeModal() {
+    const modal = document.getElementById('addEpisodeModal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function saveEpisode(isPublished) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const episodeNumber = parseInt(document.getElementById('episodeNumberInput').value);
+    const title = document.getElementById('episodeTitleInput').value.trim();
+    const content = document.getElementById('episodeContentInput').value.trim();
+
+    if (!title) { alert('회차 제목을 입력해주세요.'); return; }
+    if (!content) { alert('본문을 입력해주세요.'); return; }
+
+    const { error } = await supabase
+        .from('episodes')
+        .insert({
+            work_id: currentWorkHomeId,
+            episode_number: episodeNumber,
+            title,
+            content,
+            is_published: isPublished
+        });
+
+    if (error) {
+        alert('저장 중 오류가 발생했습니다.');
+        console.error(error);
+        return;
+    }
+
+    closeAddEpisodeModal();
+    alert(isPublished ? '발행되었습니다!' : '임시저장되었습니다!');
+    trackSubmitSuccess('episode', {
+        work_id: currentWorkHomeId,
+        is_published: isPublished
+    });
+    renderWorkHomeEpisodes();
+}
+
+async function renderWorkHomeEpisodes() {
+    const listEl = document.getElementById('workHomeEpisodeList');
+    if (!listEl || !currentWorkHomeId) return;
+
+    const { data: episodes } = await supabase
+        .from('episodes')
+        .select('*')
+        .eq('work_id', currentWorkHomeId)
+        .order('episode_number', { ascending: true });
+
+    if (!episodes || episodes.length === 0) {
+        listEl.innerHTML = '<p class="empty-episode">아직 등록된 회차가 없습니다.</p>';
+        return;
+    }
+
+    listEl.innerHTML = episodes.map(ep => `
+        <div class="episode-item">
+            <span class="episode-number">${ep.episode_number}화</span>
+            <span class="episode-title">${ep.title}</span>
+            <span class="episode-status ${ep.is_published ? 'published' : 'draft'}">
+                ${ep.is_published ? '발행' : '임시저장'}
+            </span>
+        </div>
+    `).join('');
+}
+
+window.openAddEpisode = openAddEpisode;
+window.closeAddEpisodeModal = closeAddEpisodeModal;
+window.saveEpisode = saveEpisode;
 
 function setupCompletionFilter() {
     const completionButtons = document.querySelectorAll('.completion-btn');
@@ -2523,7 +2734,7 @@ async function renderAuthorWrite() {
         myWorksGrid.querySelectorAll('.author-work-btn--home').forEach(btn => {
             btn.addEventListener('click', () => {
                 const workId = btn.dataset.workId;
-                openModal(workId);
+                openWorkHome(workId);
             });
         });
     }
@@ -2871,6 +3082,10 @@ async function saveWorkToSupabase() {
         }
         
         alert('작품이 성공적으로 등록되었습니다!');
+        trackSubmitSuccess('work', {
+            work_id: workData?.id,
+            genre: addWorkFormData.genre
+        });
         closeAddWorkModal();
         renderAuthorHome();
         return true;
