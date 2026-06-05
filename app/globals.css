@@ -2855,21 +2855,44 @@ html {
     cursor: pointer;
 }
 
-#viewPage {
+#viewPage.author-mode {
     background: #FFF8F3;
 }
 
-.episode-card.active {
+#viewPage.author-mode .episode-card.active {
     background: linear-gradient(135deg, #FF8C2A, #FFB347) !important;
     border-color: #FF8C2A !important;
     color: white !important;
 }
 
-.episode-card:hover {
+#viewPage.author-mode .episode-card:hover {
     border-color: #FF8C2A !important;
-    color: #FF8C2A !important;
 }
 
-#viewEpisodeBadge {
+#viewPage.author-mode #viewEpisodeBadge {
     background: #FF8C2A !important;
+}
+#viewPage.author-mode .view-book-header {
+    background: linear-gradient(135deg, #ffffff 0%, #FFFDE7 100%);
+    border-color: #FFE0C0;
+}
+
+#viewPage.author-mode .view-book-cover-wrap {
+    background: linear-gradient(135deg, #FFE0C0 0%, #FFB347 100%);
+}
+.episode-item {
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+.episode-item:hover {
+    background: #FFF3E8;
+    color: #FF8C2A;
+}
+
+.episode-item:hover .episode-title {
+    text-decoration: underline;
+    color: #FF8C2A;
 }

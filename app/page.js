@@ -1355,7 +1355,37 @@ async function openViewPage(workId) {
         .eq('id', workId)
         .single();
 
-    if (error || !work) return;
+    if (error || !work) {
+    const localWork = works.find(w => String(w.id) === String(workId));
+    if (!localWork) return;
+    currentReadingWorkId = localWork.id;
+    currentReadingWork = {
+        ...localWork,
+        cover_url: localWork.cover,
+        author: localWork.author
+    };
+    currentReadingEpisodes = (localWork.episodes || []).map(ep => ({
+        ...ep,
+        episode_number: ep.ep,
+    }));
+    renderViewPage();
+    const viewPageEl = document.getElementById('viewPage');
+if (viewPageEl) {
+    if (currentMode === 'author') {
+        viewPageEl.classList.add('author-mode');
+        viewPageEl.classList.remove('reader-mode');
+    } else {
+        viewPageEl.classList.add('reader-mode');
+        viewPageEl.classList.remove('author-mode');
+    }
+const viewLabel = document.querySelector('.view-page-label');
+if (viewLabel) {
+    viewLabel.textContent = currentMode === 'author' ? '회차 관리하기' : '감상하기';
+}}
+    showPage('viewPage');
+    window.scrollTo(0, 0);
+    return;
+}
 
     const { data: episodesData } = await supabase
         .from('episodes')
@@ -1367,6 +1397,19 @@ async function openViewPage(workId) {
     currentReadingWork = work;
     currentReadingEpisodes = episodesData || [];
     renderViewPage();
+    const viewPageEl = document.getElementById('viewPage');
+if (viewPageEl) {
+    if (currentMode === 'author') {
+        viewPageEl.classList.add('author-mode');
+        viewPageEl.classList.remove('reader-mode');
+    } else {
+        viewPageEl.classList.add('reader-mode');
+        viewPageEl.classList.remove('author-mode');
+    }
+const viewLabel = document.querySelector('.view-page-label');
+if (viewLabel) {
+    viewLabel.textContent = currentMode === 'author' ? '회차 관리하기' : '감상하기';
+}}
     showPage('viewPage');
     window.scrollTo(0, 0);
 }
@@ -1466,7 +1509,7 @@ function renderViewPage() {
     }
 
     if (viewTitle) viewTitle.textContent = work.title;
-    if (viewAuthor) viewAuthor.textContent = `by ${work.author || ''}`;
+    if (viewAuthor) viewAuthor.textContent = `by ${work.author_nickname || ''}`;
     if (viewSynopsis) viewSynopsis.textContent = work.synopsis;
 
     if (viewEpisodeList) {
@@ -3204,6 +3247,7 @@ async function saveWorkToSupabase() {
             .insert([
                 {
                     author_id: user.id,
+                    author_nickname: profile?.author_nickname || profile?.nickname || '',
                     title: addWorkFormData.title,
                     synopsis: addWorkFormData.synopsis,
                     cover_url: coverUrl,
