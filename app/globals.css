@@ -2854,3 +2854,22 @@ html {
     color: #aaa;
     cursor: pointer;
 }
+
+#viewPage {
+    background: #FFF8F3;
+}
+
+.episode-card.active {
+    background: linear-gradient(135deg, #FF8C2A, #FFB347) !important;
+    border-color: #FF8C2A !important;
+    color: white !important;
+}
+
+.episode-card:hover {
+    border-color: #FF8C2A !important;
+    color: #FF8C2A !important;
+}
+
+#viewEpisodeBadge {
+    background: #FF8C2A !important;
+}

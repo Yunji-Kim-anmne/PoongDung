@@ -538,6 +538,43 @@ const pageMarkup = `
                 </div>
             </div>
         </div>
+        <div id="editWorkModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeEditWorkModal()">
+    <div class="modal-container" style="max-width:500px; width:90%; max-height:85vh; display:flex; flex-direction:column; border-radius:16px; overflow:hidden; padding-top:1.5rem;">
+        <div style="border-bottom:1px solid #eee; padding:0 2rem 1rem; display:flex; align-items:center; justify-content:space-between;">
+            <h2 style="width:100%; text-align:center; color:#FF8C2A; font-weight:700; font-size:1.1rem;">작품 정보 수정</h2>
+            <button onclick="closeEditWorkModal()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:#aaa;">✕</button>
+        </div>
+        <div style="padding:1.5rem 2rem; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:1.5rem;">
+            <div>
+                <label style="font-weight:600;font-size:14px;color:#2C3E50;display:block;margin-bottom:6px;">제목</label>
+                <input id="editWorkTitle" type="text" style="width:100%;padding:10px 14px;border:1px solid #eee;border-radius:10px;font-size:14px;background:#F5F5F5;color:#999;" disabled />
+            </div>
+            <div>
+                <label style="font-weight:600;font-size:14px;color:#2C3E50;display:block;margin-bottom:6px;">장르</label>
+                <select id="editWorkGenre" style="width:100%;padding:10px 14px;border:1px solid #D5E8F7;border-radius:10px;font-size:14px;cursor:pointer;">
+                    <option value="literature">문학</option>
+                    <option value="webtoon">만화/웹툰</option>
+                    <option value="information">정보성 글</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-weight:600;font-size:14px;color:#2C3E50;display:block;margin-bottom:6px;">작품 소개 *</label>
+                <textarea id="editWorkSynopsis" maxlength="100" style="width:100%;min-height:120px;padding:10px 14px;border:1px solid #D5E8F7;border-radius:10px;font-size:14px;resize:vertical;"></textarea>
+                <div style="text-align:right;font-size:12px;color:#999;margin-top:4px;"><span id="editSynopsisCount">0</span> / 100</div>
+            </div>
+            <div>
+                <label style="font-weight:600;font-size:14px;color:#2C3E50;display:block;margin-bottom:6px;">해시태그</label>
+                <div id="editWorkTagsContainer" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.8rem;"></div>
+                <div id="editWorkTagOptions" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
+            </div>
+        </div>
+        <div style="border-top:1px solid #eee;padding:1rem 2rem;display:flex;gap:1rem;">
+            <button onclick="closeEditWorkModal()" style="flex:1;padding:12px;border:1px solid #ddd;border-radius:10px;background:white;color:#666;font-size:14px;font-weight:600;cursor:pointer;">취소</button>
+            <button onclick="saveEditWork()" style="flex:1;padding:12px;border:none;border-radius:10px;background:#FF8C2A;color:white;font-size:14px;font-weight:600;cursor:pointer;">저장</button>
+        </div>
+    </div>
+</div>
+
 
         <!-- 작품 등록 모달 -->
         <div id="addWorkModal" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeAddWorkModal()">
@@ -1074,6 +1111,8 @@ let likedWorks = new Set();
 let bookshelfSortable = null;
 let currentPageId = 'homePage';
 let currentReadingWorkId = null;
+let currentReadingWork = null;
+let currentReadingEpisodes = [];
 let currentReadingEpisodeIndex = 0;
 let currentWorkHomeId = null;
 let currentMode = 'reader';
@@ -1307,12 +1346,26 @@ function openWork(workId, mode = 'modal') {
     openModal(workId);
 }
 
-function openViewPage(workId) {
-    const work = works.find(w => w.id === workId);
-    if (!work) return;
+async function openViewPage(workId) {
+    if (!workId) return;
+
+    const { data: work, error } = await supabase
+        .from('works')
+        .select('*')
+        .eq('id', workId)
+        .single();
+
+    if (error || !work) return;
+
+    const { data: episodesData } = await supabase
+        .from('episodes')
+        .select('*')
+        .eq('work_id', workId)
+        .order('episode_number', { ascending: true });
 
     currentReadingWorkId = workId;
-    currentReadingEpisodeIndex = 0;
+    currentReadingWork = work;
+    currentReadingEpisodes = episodesData || [];
     renderViewPage();
     showPage('viewPage');
     window.scrollTo(0, 0);
@@ -1377,8 +1430,11 @@ function getCurrentReadingWork() {
 }
 
 function renderViewPage() {
-    const work = getCurrentReadingWork();
+    const work = currentReadingWork;
     if (!work) return;
+
+    const episodes = currentReadingEpisodes || [];
+    const currentEpisode = episodes[currentReadingEpisodeIndex] || episodes[0];
 
     const viewCover = document.getElementById('viewCover');
     const viewTitle = document.getElementById('viewTitle');
@@ -1391,18 +1447,32 @@ function renderViewPage() {
     const prevEpisodeBtn = document.getElementById('prevEpBtn');
     const nextEpisodeBtn = document.getElementById('nextEpBtn');
 
-    const episodes = work.episodes || [];
-    const currentEpisode = episodes[currentReadingEpisodeIndex] || episodes[0];
+    if (viewCover) {
+        const coverDiv = viewCover.parentElement;
+        coverDiv?.querySelectorAll('.cover-placeholder').forEach(el => el.remove());
+        if (work.cover_url) {
+            viewCover.src = work.cover_url;
+            viewCover.style.display = 'block';
+        } else {
+            viewCover.style.display = 'none';
+            if (coverDiv) {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'cover-placeholder';
+                placeholder.style.cssText = 'width:100%;height:100%;background:linear-gradient(135deg,#FFE0C0,#FFB347);border-radius:8px;display:flex;align-items:center;justify-content:center;padding:1rem;text-align:center;';
+                placeholder.innerHTML = `<div style="color:white;font-weight:700;font-size:15px;word-break:keep-all;">${work.title}</div>`;
+                coverDiv.appendChild(placeholder);
+            }
+        }
+    }
 
-    if (viewCover) viewCover.src = work.cover;
     if (viewTitle) viewTitle.textContent = work.title;
-    if (viewAuthor) viewAuthor.textContent = `by ${work.author}`;
+    if (viewAuthor) viewAuthor.textContent = `by ${work.author || ''}`;
     if (viewSynopsis) viewSynopsis.textContent = work.synopsis;
 
     if (viewEpisodeList) {
         viewEpisodeList.innerHTML = episodes.map((episode, index) => `
             <button class="episode-card ${index === currentReadingEpisodeIndex ? 'active' : ''}" data-episode-index="${index}">
-                <span class="episode-card-number">${episode.ep}화</span>
+                <span class="episode-card-number">${episode.episode_number}화</span>
                 <span class="episode-card-title">${episode.title}</span>
             </button>
         `).join('');
@@ -1410,26 +1480,19 @@ function renderViewPage() {
         viewEpisodeList.querySelectorAll('.episode-card').forEach(button => {
             button.addEventListener('click', () => {
                 currentReadingEpisodeIndex = parseInt(button.dataset.episodeIndex, 10);
-                readEpisodeCount += 1;
-                lastReadWorkId = currentReadingWorkId;
                 renderViewPage();
             });
         });
     }
 
     if (currentEpisode) {
-        if (viewEpisodeTitle) viewEpisodeTitle.textContent = `${currentEpisode.ep}화 · ${currentEpisode.title}`;
-        if (viewEpisodeContent) viewEpisodeContent.textContent = currentEpisode.content;
-        if (viewEpisodeBadge) viewEpisodeBadge.textContent = `${currentEpisode.ep}화`;
+        if (viewEpisodeTitle) viewEpisodeTitle.textContent = `${currentEpisode.episode_number}화 · ${currentEpisode.title}`;
+        if (viewEpisodeContent) viewEpisodeContent.innerHTML = currentEpisode.content || '';
+        if (viewEpisodeBadge) viewEpisodeBadge.textContent = `${currentEpisode.episode_number}화`;
     }
 
-    if (prevEpisodeBtn) {
-        prevEpisodeBtn.disabled = currentReadingEpisodeIndex === 0;
-    }
-
-    if (nextEpisodeBtn) {
-        nextEpisodeBtn.disabled = currentReadingEpisodeIndex >= episodes.length - 1;
-    }
+    if (prevEpisodeBtn) prevEpisodeBtn.disabled = currentReadingEpisodeIndex === 0;
+    if (nextEpisodeBtn) nextEpisodeBtn.disabled = currentReadingEpisodeIndex >= episodes.length - 1;
 }
 
 function goToPreviousEpisode() {
@@ -2248,19 +2311,111 @@ async function renderWorkHomeEpisodes() {
     }
 
     listEl.innerHTML = episodes.map(ep => `
-        <div class="episode-item">
+        <div class="episode-item" data-episode-id="${ep.id}" style="cursor:pointer;">
             <span class="episode-number">${ep.episode_number}화</span>
             <span class="episode-title">${ep.title}</span>
-            <span class="episode-status ${ep.is_published ? 'published' : 'draft'}">
-                ${ep.is_published ? '발행' : '임시저장'}
-            </span>
         </div>
     `).join('');
+
+    listEl.querySelectorAll('.episode-item').forEach(item => {
+        item.addEventListener('click', async () => {
+            const episodeId = item.dataset.episodeId;
+            const ep = episodes.find(e => String(e.id) === String(episodeId));
+            if (!ep) return;
+            currentReadingEpisodeIndex = episodes.indexOf(ep);
+            await openViewPage(ep.work_id);
+        });
+    });
 }
 
+window.openViewPage = openViewPage;
+window.renderViewPage = renderViewPage;
 window.openAddEpisode = openAddEpisode;
 window.closeAddEpisodeModal = closeAddEpisodeModal;
 window.saveEpisode = saveEpisode;
+
+let editWorkTags = [];
+
+async function openEditWork(workId) {
+    const targetId = workId || currentWorkHomeId;
+    if (!targetId) return;
+
+    const { data: work, error } = await supabase
+        .from('works')
+        .select('*, work_tags(*)')
+        .eq('id', targetId)
+        .single();
+
+    if (error || !work) { alert('작품 정보를 불러오지 못했습니다.'); return; }
+
+    window._editingWorkId = targetId;
+
+    document.getElementById('editWorkTitle').value = work.title || '';
+    document.getElementById('editWorkGenre').value = work.genre || '';
+    document.getElementById('editWorkSynopsis').value = work.synopsis || '';
+    document.getElementById('editSynopsisCount').textContent = (work.synopsis || '').length;
+
+    editWorkTags = (work.work_tags || []).filter(t => t.tag_type === 'author').map(t => t.tag);
+    renderEditTags();
+
+    document.getElementById('editWorkSynopsis').oninput = function() {
+        document.getElementById('editSynopsisCount').textContent = this.value.length;
+    };
+
+    document.getElementById('editWorkModal').style.display = 'flex';
+}
+
+function renderEditTags() {
+    const container = document.getElementById('editWorkTagsContainer');
+    if (!container) return;
+    container.innerHTML = editWorkTags.map((tag, i) => `
+        <span style="display:inline-flex;align-items:center;gap:4px;background:#FFF3E8;color:#FF8C2A;border:1px solid #FFD4A8;border-radius:20px;padding:4px 10px;font-size:13px;">
+            #${tag}
+            <button onclick="removeEditTag(${i})" style="background:none;border:none;color:#FF8C2A;cursor:pointer;font-size:14px;padding:0;line-height:1;">×</button>
+        </span>
+    `).join('');
+}
+
+function removeEditTag(index) {
+    editWorkTags.splice(index, 1);
+    renderEditTags();
+}
+
+async function saveEditWork() {
+    const editWorkId = window._editingWorkId;
+    if (!editWorkId) { alert('수정할 작품을 찾을 수 없습니다.'); return; }
+
+    const synopsis = document.getElementById('editWorkSynopsis')?.value.trim();
+    const genre = document.getElementById('editWorkGenre')?.value;
+    if (!synopsis) { alert('작품 소개를 입력해주세요.'); return; }
+
+    const { error } = await supabase
+        .from('works')
+        .update({ synopsis, genre })
+        .eq('id', editWorkId);
+
+    if (error) { alert('저장 중 오류가 발생했습니다.'); console.error(error); return; }
+
+    await supabase.from('work_tags').delete().eq('work_id', editWorkId).eq('tag_type', 'author');
+
+    if (editWorkTags.length > 0) {
+        await supabase.from('work_tags').insert(
+            editWorkTags.map(tag => ({ work_id: editWorkId, tag, tag_type: 'author' }))
+        );
+    }
+
+    alert('저장되었습니다!');
+    closeEditWorkModal();
+}
+
+function closeEditWorkModal() {
+    document.getElementById('editWorkModal').style.display = 'none';
+}
+
+window.openEditWork = openEditWork;
+window.saveEditWork = saveEditWork;
+window.closeEditWorkModal = closeEditWorkModal;
+window.removeEditTag = removeEditTag;
 
 function setupCompletionFilter() {
     const completionButtons = document.querySelectorAll('.completion-btn');
@@ -2509,7 +2664,7 @@ function renderHeaderBySession(user, profile = null) {
     const displayName = profile?.nickname || user.user_metadata?.nickname || user.email?.split('@')[0] || '내 프로필';
     const role = profile?.role || user.user_metadata?.role || 'reader';
     const birthYear = profile?.birth_year ? Number(profile.birth_year) : null;
-    const isWriter = role === 'writer';
+    const isWriter = role === 'author';
 
     if (!isWriter) {
         currentMode = 'reader';
