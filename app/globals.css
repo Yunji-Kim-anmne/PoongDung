@@ -2069,12 +2069,17 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--color-primary);
+    background: #C8C8C8;
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #4A9FD8;
+    background: #A0A0A0;
+}
+
+::-webkit-scrollbar-track {
+    background: #F5F5F5;
+    border-radius: 4px;
 }
 
 .header-shadow-cover {
@@ -2895,4 +2900,18 @@ html {
 .episode-item:hover .episode-title {
     text-decoration: underline;
     color: #FF8C2A;
+}
+#editWorkModal ::-webkit-scrollbar {
+    width: 6px;
+}
+#editWorkModal ::-webkit-scrollbar-track {
+    background: #FFF3E8;
+    border-radius: 10px;
+}
+#editWorkModal ::-webkit-scrollbar-thumb {
+    background: #FF8C2A;
+    border-radius: 10px;
+}
+#editWorkModal ::-webkit-scrollbar-thumb:hover {
+    background: #e07820;
 }

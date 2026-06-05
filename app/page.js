@@ -1880,7 +1880,8 @@ async function renderAuthorHome() {
             // 버튼 이벤트 연결
             pastWorksGrid.querySelectorAll('.author-work-btn--edit').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    alert('수정 기능은 준비 중이에요!');
+                const workId = btn.dataset.workId;
+                openEditWork(workId);
                 });
             });
             pastWorksGrid.querySelectorAll('.author-work-btn--home').forEach(btn => {
