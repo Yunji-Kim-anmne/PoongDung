@@ -1434,8 +1434,14 @@ if (viewLabel) {
 }
 
 function openModal(workId) {
-    const work = works.find(w => w.id === workId);
-    if (!work) return;
+    const work = works.find(w => String(w.id) === String(workId));
+    if (!work) {
+        document.getElementById('modalRating').textContent = '';
+        const authorTagsEl = document.getElementById('modalAuthorTags');
+        const readerTagsEl = document.getElementById('modalReaderTags');
+        if (authorTagsEl) authorTagsEl.innerHTML = '';
+        if (readerTagsEl) readerTagsEl.innerHTML = '';
+    }
 
     document.getElementById('modalTitle').textContent = work.title;
     document.getElementById('modalAuthor').textContent = 'by ' + work.author;
