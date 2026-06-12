@@ -50,9 +50,11 @@ export async function signup(email, password, nickname, role = 'reader', gender 
         });
 
       if (profileError) {
-        // 프로필 생성 실패 시 계정도 삭제해야 할 수 있음
         console.error('Profile creation error:', profileError);
-        return { user: null, error: 'Failed to create user profile' };
+        if (profileError.code === '23505') {
+          return { user: null, error: '이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해주세요.' };
+        }
+        return { user: null, error: '회원가입 처리 중 오류가 발생했습니다.' };
       }
     }
 

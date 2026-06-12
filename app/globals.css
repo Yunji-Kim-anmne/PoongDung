@@ -1248,6 +1248,191 @@ body.author-mode-active .trending-comment-card {
     word-break: keep-all;
 }
 
+.episode-like-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: fit-content;
+    margin: 2.5rem auto 0;
+    padding: 0.6rem 1.2rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--color-text);
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.episode-like-btn:hover {
+    border-color: var(--color-primary);
+}
+
+.episode-like-btn.liked {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+}
+
+/* 댓글 영역 */
+.comment-section {
+    margin-top: 5.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.comment-section-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--color-text);
+    margin-bottom: 0.9rem;
+}
+
+.comment-section-title span {
+    color: var(--color-primary);
+}
+
+.comment-input-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.comment-input {
+    flex: 1;
+    border: 1px solid var(--color-border);
+    background: var(--bg-primary);
+    border-radius: 999px;
+    padding: 0.65rem 1.1rem;
+    font-size: 0.9rem;
+    color: var(--color-text);
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.comment-input:focus {
+    border-color: var(--color-primary);
+    background: var(--bg-secondary);
+}
+
+.comment-submit-btn {
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 0.65rem 1.4rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s ease;
+}
+
+.comment-submit-btn:hover {
+    opacity: 0.85;
+}
+
+.comment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.comment-item {
+    border: 1px solid var(--color-border);
+    background: #f9fcff;
+    border-radius: 16px;
+    padding: 0.9rem 1rem;
+}
+
+.comment-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+
+.comment-nickname {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.comment-nickname.is-author {
+    color: var(--color-primary);
+}
+
+.author-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    background: var(--bg-primary);
+    border: 1px solid var(--color-primary);
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+}
+
+.comment-item.author-comment {
+    background: #FFFDF2;
+    border-color: #FFF1B8;
+}
+.comment-date {
+    font-size: 0.75rem;
+    color: var(--color-text-sub);
+}
+
+.comment-content {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--color-text);
+    word-break: break-word;
+    margin-bottom: 0.5rem;
+}
+
+.comment-like-btn,
+.comment-delete-btn {
+    border: 1px solid var(--color-border);
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--color-text-sub);
+    cursor: pointer;
+    margin-right: 0.4rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.comment-like-btn {
+    min-width: 52px;
+    text-align: center;
+}
+
+.comment-like-icon {
+    display: inline-block;
+    font-size: 0.95em;
+    transform: translateY(-1px);
+}
+
+.comment-like-btn:not(.liked) .comment-like-icon {
+    font-size: 0.8em;
+}
+
+.comment-like-btn:hover,
+.comment-delete-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.comment-like-btn.liked {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+}
+
 .episode-arrow-btn {
     position: fixed;
     top: 50%;
@@ -2907,11 +3092,4 @@ html {
 #editWorkModal ::-webkit-scrollbar-track {
     background: #FFF3E8;
     border-radius: 10px;
-}
-#editWorkModal ::-webkit-scrollbar-thumb {
-    background: #FF8C2A;
-    border-radius: 10px;
-}
-#editWorkModal ::-webkit-scrollbar-thumb:hover {
-    background: #e07820;
 }

@@ -267,11 +267,17 @@ const pageMarkup = `
                 <div id="creationGuideBanner" style="display:none;position:absolute;top:2rem;right:1rem;z-index:10;">
                     <button onclick="
                         const panel = document.getElementById('creationGuidePanel');
+                        const overlay = document.getElementById('creationGuideOverlay');
                         const isOpen = panel.style.display === 'block';
                         panel.style.display = isOpen ? 'none' : 'block';
-                    " style="background:white;border:1.5px solid #FFE0C0;border-radius:8px;padding:6px 12px;font-size:0.8rem;font-weight:600;color:#FF8C2A;cursor:pointer;white-space:nowrap;">
+                        overlay.style.display = isOpen ? 'none' : 'block';
+                   " style="background:white;border:1.5px solid #FFE0C0;border-radius:8px;padding:6px 12px;font-size:0.8rem;font-weight:600;color:#FF8C2A;cursor:pointer;white-space:nowrap;">
                         📋 창작 절차 안내
                     </button>
+                    <div id="creationGuideOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9;background:transparent;" onclick="
+                        document.getElementById('creationGuidePanel').style.display='none';
+                        document.getElementById('creationGuideOverlay').style.display='none';
+                    "></div>
                     <div id="creationGuidePanel" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:600px;background:white;border:1.5px solid #FFE0C0;border-radius:16px;padding:1.5rem;box-shadow:0 8px 24px rgba(255,140,42,0.15);z-index:20;">
                         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
                             <div style="background:#FFF8F0;border:2px solid #FFE0C0;border-radius:16px;padding:1.5rem;text-align:center;position:relative;">
@@ -496,6 +502,19 @@ const pageMarkup = `
                             <h3 class="view-reading-title" id="viewEpisodeTitle"></h3>
                         </div>
                         <div class="view-reading-content" id="viewEpisodeContent"></div>
+
+                        <button id="episodeLikeBtn" class="episode-like-btn">
+                            🔥 다음 화 기대돼요 <span id="episodeLikeCount">0</span>
+                        </button>
+
+                        <div class="comment-section">
+                            <h4 class="comment-section-title">댓글 <span id="commentCount">0</span></h4>
+                            <div class="comment-input-row">
+                                <input type="text" id="commentInput" class="comment-input" placeholder="댓글을 남겨주세요">
+                                <button id="commentSubmitBtn" class="comment-submit-btn">등록</button>
+                            </div>
+                            <div id="commentList" class="comment-list"></div>
+                        </div>
                     </article>
                 </section>
 
@@ -710,13 +729,13 @@ const commonTags = {
         reader: ['탄탄한 서사', '매력적인 캐릭터', '눈물주의', '강추']
     },
     information: {
-        author: ['입문자용', '중급자용', '심화', '시리즈', '완결', '정기연재'],
+        author: ['입문자용', '중급자용', '심화', '시리즈', '완결', '정기연재', '연재중'],
         reader: ['쉽게읽힘', '정독추천', '유익함', '저장각', '강추', '실용적']
     }
 };
 
 const categoryTagMap = {
-    '감성': { author: ['일상기록', '감정글', '새벽감성', '위로'], reader: ['잔잔함', '공감', '감성글쓰기'] },
+    '감성': { author: ['일상기록', '감정글', '새벽감성', '위로'], reader: ['잔잔함', '공감', '감성글쓰기', '여운남음'] },
     '교육': { author: ['학습법', '공부팁', '교육정보', '진로'], reader: ['자기주도학습', '스터디', '교육콘텐츠'] },
     '기술': { author: ['IT트렌드', '개발일지', '코딩', '테크뉴스'], reader: ['앱개발', 'AI기술', '디지털전환'] },
     '데이터과학': { author: ['데이터분석', '파이썬활용', '시각화', '통계기초'], reader: ['머신러닝입문', '데이터리터러시', '분석툴'] },
@@ -724,11 +743,11 @@ const categoryTagMap = {
     '모험': { author: ['세계관', '퀘스트', '여정', '성장서사'], reader: ['액션전개', '탐험', '긴장감있는'] },
     '미스터리': { author: ['밀실', '연쇄살인', '미제사건', '실화기반'], reader: ['반전있음', '긴장감있는', '소름주의', '떡밥'] },
     '심리학': { author: ['심리학개념', '인지편향', '행동심리', '감정조절'], reader: ['심리실험', '정신건강정보', '심리팁'] },
-    '액션': { author: ['전투씬', '고강도전개', '주인공각성', '스피디한전개'], reader: ['세계관충돌', '보스전'] },
+    '액션': { author: ['전투씬', '고강도전개', '주인공각성', '스피디한전개', '세계관'], reader: ['세계관충돌', '보스전'] },
     '일상': { author: ['잔잔한전개', '소소함', '힐링물', '느슨한서사'], reader: ['공감100%', '음식', '스트레스없음', '귀여움'] },
     '자기계발': { author: ['습관형성', '생산성팁', '목표설정', '동기부여'], reader: ['루틴공유', '성장기록', '시간관리'] },
     '추리': { author: ['밀실', '연쇄살인', '긴장감있는', '단서찾기'], reader: ['반전있음', '소름주의', '트릭주의'] },
-    '코미디': { author: ['웃음주의', '병맛', '현실공감', '일상개그'], reader: ['유쾌한전개', '반전개그', '공감100%'] },
+    '코미디': { author: ['웃음주의', '병맛', '현실공감', '일상개그'], reader: ['유쾌한전개', '반전개그', '공감100%', '웃음주의'] },
     '판타지': { author: ['회귀물', '이세계', '마법', '몰입각'], reader: ['스케일큰', '세계관탄탄', '판타지입문'] },
     '학교': { author: ['학원물', '청춘서사', '교우관계', '첫사랑'], reader: ['우정', '학교생활', '성장스토리'] }
 };
@@ -1509,7 +1528,7 @@ function renderViewPage() {
     }
 
     if (viewTitle) viewTitle.textContent = work.title;
-    if (viewAuthor) viewAuthor.textContent = `by ${work.author_nickname || ''}`;
+    if (viewAuthor) viewAuthor.textContent = `by ${work.author_nickname || work.author || ''}`;
     if (viewSynopsis) viewSynopsis.textContent = work.synopsis;
 
     if (viewEpisodeList) {
@@ -1532,7 +1551,190 @@ function renderViewPage() {
         if (viewEpisodeTitle) viewEpisodeTitle.textContent = `${currentEpisode.episode_number}화 · ${currentEpisode.title}`;
         if (viewEpisodeContent) viewEpisodeContent.innerHTML = currentEpisode.content || '';
         if (viewEpisodeBadge) viewEpisodeBadge.textContent = `${currentEpisode.episode_number}화`;
+        renderComments(currentEpisode.id ?? `local-${work.id}-${currentEpisode.episode_number}`, work.id);
+        renderEpisodeLike(currentEpisode.id ?? `local-${work.id}-${currentEpisode.episode_number}`);
     }
+    
+    async function renderEpisodeLike(episodeId) {
+    const btn = document.getElementById('episodeLikeBtn');
+    const countEl = document.getElementById('episodeLikeCount');
+    if (!btn || !countEl) return;
+
+    let count = 0;
+    let isLiked = false;
+
+    try {
+        const res = await supabase
+            .from('episode_likes')
+            .select('*', { count: 'exact', head: true })
+            .eq('episode_id', String(episodeId));
+        count = res.count || 0;
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data } = await supabase
+                .from('episode_likes')
+                .select('episode_id')
+                .eq('episode_id', String(episodeId))
+                .eq('user_id', user.id)
+                .maybeSingle();
+            isLiked = !!data;
+        }
+    } catch (err) {
+        console.error('episode_likes error:', err);
+    }
+
+    countEl.textContent = count;
+    btn.classList.toggle('liked', isLiked);
+
+    btn.onclick = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            alert('로그인이 필요해요!');
+            return;
+        }
+        try {
+            if (isLiked) {
+                await supabase.from('episode_likes').delete()
+                    .eq('episode_id', String(episodeId)).eq('user_id', user.id);
+            } else {
+                await supabase.from('episode_likes').insert({
+                    episode_id: String(episodeId), user_id: user.id
+                });
+            }
+        } catch (err) {
+            console.error('episode_likes toggle error:', err);
+        }
+        renderEpisodeLike(episodeId);
+    };
+}
+
+    async function renderComments(episodeId, workId) {
+    const commentList = document.getElementById('commentList');
+    const commentCount = document.getElementById('commentCount');
+    const commentSubmitBtn = document.getElementById('commentSubmitBtn');
+    const commentInput = document.getElementById('commentInput');
+    if (!commentList) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { data: comments, error } = await supabase
+        .from('comments')
+        .select('*')
+        .eq('episode_id', String(episodeId))
+        .order('created_at', { ascending: true });
+
+    if (error || !comments) {
+        commentList.innerHTML = '<p class="empty-message">댓글을 불러올 수 없어요</p>';
+        return;
+    }
+
+    if (commentCount) commentCount.textContent = comments.length;
+
+    let likedCommentIds = new Set();
+    if (user && comments.length > 0) {
+        const { data: likes } = await supabase
+            .from('comment_likes')
+            .select('comment_id')
+            .eq('user_id', user.id)
+            .in('comment_id', comments.map(c => c.id));
+        if (likes) likedCommentIds = new Set(likes.map(l => l.comment_id));
+    }
+
+    const workAuthorName = currentReadingWork?.author_nickname || currentReadingWork?.author || '';
+
+    commentList.innerHTML = comments.length === 0
+        ? '<p class="empty-message">첫 댓글을 남겨보세요!</p>'
+        : comments.map(c => `
+            <div class="comment-item ${c.nickname === workAuthorName ? 'author-comment' : ''}" data-comment-id="${c.id}">
+                <div class="comment-meta">
+                    <span class="comment-nickname ${c.nickname === workAuthorName ? 'is-author' : ''}">${c.nickname}</span>
+                    ${c.nickname === workAuthorName ? '<span class="author-badge">작가</span>' : ''}
+                    <span class="comment-date">${new Date(c.created_at).toLocaleDateString()}</span>
+                </div>
+                <p class="comment-content">${c.content}</p>
+                <button class="comment-like-btn ${likedCommentIds.has(c.id) ? 'liked' : ''}" data-comment-id="${c.id}" data-liked="${likedCommentIds.has(c.id)}">
+                    <span class="comment-like-icon">${likedCommentIds.has(c.id) ? '♥' : '♡'}</span> ${c.like_count || 0}
+                </button>
+                ${user && user.id === c.user_id ? `<button class="comment-delete-btn" data-comment-id="${c.id}">삭제</button>` : ''}
+            </div>
+        `).join('');
+
+    commentList.querySelectorAll('.comment-like-btn').forEach(btn => {
+        btn.addEventListener('click', () => toggleCommentLike(btn.dataset.commentId, btn.dataset.liked === 'true', episodeId, workId));
+    });
+    commentList.querySelectorAll('.comment-delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => deleteComment(btn.dataset.commentId, episodeId, workId));
+    });
+
+    if (commentSubmitBtn) {
+        commentSubmitBtn.onclick = () => submitComment(episodeId, workId);
+    }
+    if (commentInput) {
+        commentInput.onkeydown = (e) => {
+            if (e.key === 'Enter') submitComment(episodeId, workId);
+        };
+    }
+}
+
+async function submitComment(episodeId, workId) {
+    const commentInput = document.getElementById('commentInput');
+    const content = commentInput?.value.trim();
+    if (!content) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        alert('로그인이 필요해요!');
+        return;
+    }
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('nickname')
+        .eq('id', user.id)
+        .single();
+
+    const { error } = await supabase.from('comments').insert({
+        episode_id: String(episodeId),
+        work_id: String(workId),
+        user_id: user.id,
+        nickname: profile?.nickname || '익명',
+        content
+    });
+
+    if (error) {
+        alert('댓글 작성에 실패했어요');
+        return;
+    }
+
+    commentInput.value = '';
+    renderComments(episodeId, workId);
+}
+
+async function toggleCommentLike(commentId, isLiked, episodeId, workId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        alert('로그인이 필요해요!');
+        return;
+    }
+
+    if (isLiked) {
+        await supabase.from('comment_likes').delete()
+            .eq('comment_id', commentId).eq('user_id', user.id);
+        await supabase.rpc('decrement_comment_like', { comment_id: commentId });
+    } else {
+        await supabase.from('comment_likes').insert({ comment_id: commentId, user_id: user.id });
+        await supabase.rpc('increment_comment_like', { comment_id: commentId });
+    }
+
+    renderComments(episodeId, workId);
+}
+
+async function deleteComment(commentId, episodeId, workId) {
+    if (!confirm('댓글을 삭제할까요?')) return;
+    await supabase.from('comments').delete().eq('id', commentId);
+    renderComments(episodeId, workId);
+}
 
     if (prevEpisodeBtn) prevEpisodeBtn.disabled = currentReadingEpisodeIndex === 0;
     if (nextEpisodeBtn) nextEpisodeBtn.disabled = currentReadingEpisodeIndex >= episodes.length - 1;
@@ -1600,7 +1802,15 @@ function renderWorks(filter = 'all') {
             (work.authorTags || []).includes('완결'));
     }
     
-    worksGrid.innerHTML = filteredWorks.map(work => createWorkCard(work)).join('');
+    if (filteredWorks.length === 0) {
+        worksGrid.innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;padding:4rem 1rem;color:#999;font-size:0.95rem;">
+                조건에 맞는 작품이 없어요.
+            </div>
+        `;
+    } else {
+        worksGrid.innerHTML = filteredWorks.map(work => createWorkCard(work)).join('');
+    }
     
     // 하트 버튼 이벤트 추가
     addLikeButtonListeners();
@@ -2526,6 +2736,7 @@ function addCategoryButtonListeners() {
             categoryButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
             currentCategory = button.dataset.category;
+            currentHashtags.clear();
             renderHashtags(currentCategory);
             renderWorks(currentFilter);
         });
@@ -2807,8 +3018,8 @@ function renderHeaderBySession(user, profile = null) {
                 currentMode = currentMode === 'author' ? 'reader' : 'author';
                 renderHeaderBySession(user, profile);
                 if (currentMode === 'author') {
+                   showPage('authorHomePage');
                     renderAuthorHome();
-                    showPage('authorHomePage');
                     document.querySelectorAll('#authorNav .view-nav-item').forEach(i => i.classList.remove('active'));
                     const authorHomeBtn = document.querySelector('#authorNav .view-nav-item[data-page="authorHomePage"]');
                     if (authorHomeBtn) authorHomeBtn.classList.add('active');
@@ -2928,7 +3139,8 @@ async function renderAuthorWrite() {
 
         myWorksGrid.querySelectorAll('.author-work-btn--edit').forEach(btn => {
             btn.addEventListener('click', () => {
-                alert('수정 기능은 준비 중이에요!');
+                const workId = btn.dataset.workId;
+                openEditWork(workId);
             });
         });
         myWorksGrid.querySelectorAll('.author-work-btn--home').forEach(btn => {
